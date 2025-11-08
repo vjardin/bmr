@@ -1,0 +1,10 @@
+-kr
+-i2
+-nut
+-ts2
+-ci2
+-lp
+-l120
+-psl
+-br
+-brf

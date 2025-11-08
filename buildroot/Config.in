@@ -1,0 +1,7 @@
+config BR2_PACKAGE_BMR
+	bool "bmr – PMBus CLI for Flex BMR"
+	select BR2_PACKAGE_JANSSON
+	select BR2_PACKAGE_I2C_TOOLS # for libi2c
+	help
+	  PMBus/SMBus CLI for Flex BMR685/BMR456 modules.
+	  JSON output via Jansson; uses libi2c from i2c-tools.

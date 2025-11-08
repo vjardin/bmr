@@ -1,0 +1,123 @@
+#include "pmbus_io.h"
+
+#include <linux/i2c-dev.h>
+#include <i2c/smbus.h>
+#include <sys/ioctl.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <errno.h>
+
+int
+pmbus_open(const char *dev, int addr7) {
+  int fd = open(dev, O_RDWR);
+  if (fd < 0)
+    return -1;
+
+  if (ioctl(fd, I2C_SLAVE, addr7) < 0) {
+    int e = errno;
+    close(fd);
+    errno = e;
+    return -1;
+  }
+
+  return fd;
+}
+
+void
+pmbus_close(int fd) {
+  if (fd >= 0)
+    close(fd);
+}
+
+int
+pmbus_rd_byte(int fd, uint8_t cmd) {
+  return i2c_smbus_read_byte_data(fd, cmd);
+}
+
+int
+pmbus_rd_word(int fd, uint8_t cmd) {
+  return i2c_smbus_read_word_data(fd, cmd);
+}
+
+int
+pmbus_rd_block(int fd, uint8_t cmd, uint8_t *buf, int max) {
+  int n = i2c_smbus_read_block_data(fd, cmd, buf);
+  if (n > max)
+    n = max;
+  return n;
+}
+
+int
+pmbus_wr_byte(int fd, uint8_t cmd, uint8_t val) {
+  return i2c_smbus_write_byte_data(fd, cmd, val);
+}
+
+int
+pmbus_wr_word(int fd, uint8_t cmd, uint16_t val) {
+  return i2c_smbus_write_word_data(fd, cmd, val);
+}
+
+int
+pmbus_wr_block(int fd, uint8_t cmd, const uint8_t *buf, int len) {
+  return i2c_smbus_write_block_data(fd, cmd, len, buf);
+}
+
+int
+pmbus_send_byte(int fd, uint8_t cmd) {
+  return i2c_smbus_write_byte(fd, cmd);
+}
+
+int
+pmbus_get_vout_mode_exp(int fd, int *exp_out) {
+  int v = pmbus_rd_byte(fd, PMBUS_VOUT_MODE);
+
+  if (v < 0)
+    return v;
+
+  uint8_t b = (uint8_t) v;
+  int mode = (b >> 5) & 7;
+  int8_t e = (int8_t) (b & 0x1F);
+
+  if (e & 0x10)
+    e |= ~0x1F;
+
+  *exp_out = e;
+
+  return (mode == 0) ? 0 : 1;
+}
+
+double
+pmbus_lin11_to_double(uint16_t raw) {
+  int16_t s = (int16_t) raw;
+  int8_t exp = (int8_t) (s >> 11);
+  int16_t mant = s & 0x7FF;
+
+  if (mant & 0x400)
+    mant |= ~0x7FF;
+
+  double scale = (exp >= 0) ? (1 << exp) : 1.0 / (1 << (-exp));
+
+  return (double) mant *scale;
+}
+
+double
+pmbus_lin16u_to_double(uint16_t raw, int exp5) {
+  double scale = (exp5 >= 0) ? (1 << exp5) : 1.0 / (1 << (-exp5));
+  return (double) raw *scale;
+}
+
+uint16_t
+le16(const uint8_t *p) {
+  return (uint16_t) p[0]
+      | ((uint16_t) p[1] << 8)
+      ;
+}
+
+uint32_t
+le32(const uint8_t *p) {
+  return (uint32_t)  p[0]
+       | ((uint32_t) p[1] << 8)
+       | ((uint32_t) p[2] << 16)
+       | ((uint32_t) p[3] << 24)
+       ;
+}
