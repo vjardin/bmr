@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+
 #include "pmbus_io.h"
 #include "decoders.h"
 #include "mfr_snapshot.h"

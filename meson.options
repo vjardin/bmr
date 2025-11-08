@@ -1,1 +1,3 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 option('fully_static', type: 'boolean', value: false, description: 'Link fully static if possible')

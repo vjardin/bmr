@@ -1,0 +1,37 @@
+COPYRIGHT
+
+Project: PMBus tools / BMR utilities
+
+Copyright (C) 2025  Free Mobile
+Copyright (C) 2025  Vincent Jardin
+
+All files in this repository are licensed under the GNU Affero General Public License,
+version 3.0 or (at your option) any later version (AGPL-3.0-or-later), unless a file
+header or directory NOTICE states otherwise. See the LICENSE file at the repository
+root for the full license text.
+
+SPDX policy
+-----------
+Each source file SHOULD begin with an SPDX license identifier:
+    SPDX-License-Identifier: AGPL-3.0-or-later
+
+If a file incorporates third-party code under a different license, keep that file’s
+original license header and add the appropriate SPDX identifier for that license.
+Do NOT remove third-party copyright notices.
+
+Contributions
+-------------
+By submitting a contribution (code, docs, tests, etc.), you agree to license your
+contribution under the same terms (AGPL-3.0-or-later). Please add your name (and,
+optionally, affiliation) to the CONTRIBUTORS file or to the relevant commit metadata.
+
+Third-party components
+----------------------
+If this repository includes vendored third-party components, their licenses and
+copyright notices MUST be preserved in a NOTICE or LICENSE file in the same
+directory as the third-party sources.
+
+Warranty
+--------
+This software is provided “as is”, without any warranty. See the LICENSE file for
+the full disclaimer and details.
