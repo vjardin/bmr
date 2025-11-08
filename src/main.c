@@ -56,7 +56,9 @@ cmd_status_all(int fd) {
     json_object_set_new(o, "STATUS_TEMPERATURE", decode_status_temperature((uint8_t) st));
   if (sc >= 0)
     json_object_set_new(o, "STATUS_CML", decode_status_cml((uint8_t) sc));
+
   json_print_or_pretty(o, opt_pretty);
+
   return 0;
 }
 
