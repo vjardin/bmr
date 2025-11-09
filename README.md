@@ -21,17 +21,17 @@ sudo meson install -C build
 All commands accept the bus and address; most support JSON output.
 
 ```bash
-bmr --bus /dev/i2c-1 --addr 0x40 <command> [subcommand] [--json] [--pretty]
+bmr --bus /dev/i2c-1 --addr 0x40 <command> [subcommand] [--pretty-off|P]
 ```
 
 * `--bus` Linux I2C device path (default: `/dev/i2c-1`).
 * `--addr` 7-bit device address (default: `0x40`).
-* `--json`, `--pretty` enable machine-readable output (handy for scripts/CI).
+* `--pretty-off|P` disable pretty output
 
 ## read — Telemetry & sensor data
 
 ```bash
-bmr ... read all|vin|vout|iout|temp|freq|duty [--json] [--pretty]
+bmr ... read all|vin|vout|iout|temp|freq|duty
 ```
 
 ### What it does
@@ -45,14 +45,13 @@ output voltage scaling uses `VOUT_MODE`.
 
 * `all` – dump all supported sensors in one JSON block.
 * Specific sensor names – only that measurement.
-* `--json --pretty` – structured output.
 
 ### Use case
 
 Bring-up sanity check before enabling loads:
 
 ```bash
-bmr --bus /dev/i2c-1 --addr 0x40 read all --json --pretty
+bmr --bus /dev/i2c-1 --addr 0x40 read all
 ```
 
 Validate VIN is within range, VOUT ≈ expected setpoint, and TEMP stays safe
@@ -61,7 +60,7 @@ while idling.
 ## status — Faults, warnings, and flags
 
 ```bash
-bmr ... status [--json] [--pretty]
+bmr ... status
 ```
 
 ### What it does
@@ -76,7 +75,7 @@ present/latched faults and warnings.
 Root-cause a rail shutdown during board test:
 
 ```bash
-bmr ... status --json --pretty
+bmr ... status
 ```
 
 If `STATUS_INPUT` shows UVLO while `STATUS_VOUT` flags TON_MAX_FAULT, sequence
@@ -85,7 +84,7 @@ or upstream supply is suspect. Cross-check timing (below).
 ## snapshot — Flex/Ericsson snapshot buffer
 
 ```bash
-bmr ... snapshot [--cycle <n>] [--decode] [--json] [--pretty]
+bmr ... snapshot [--cycle <n>] [--decode]
 ```
 
 ### What it does
@@ -100,7 +99,7 @@ and depth are device-specific (BMR685 documents the feature).
 After unexpected PG (Power Good) drop, fetch the last event record:
 
 ```bash
-bmr ... snapshot --cycle 0 --decode --json --pretty
+bmr ... snapshot --cycle 0 --decode
 ```
 
 Correlate VIN dip + IOUT surge at the fault time to confirm overload rather than
@@ -134,7 +133,7 @@ Now PG can be wire-ORed across rails without contention.
 ## fwdata — Manufacturer firmware data dump
 
 ```bash
-bmr ... fwdata [--json] [--pretty]
+bmr ... fwdata
 ```
 
 ### What it does
@@ -148,7 +147,7 @@ is vendor-specific; output is provided as text/JSON.
 Inventory/validation in production:
 
 ```bash
-bmr ... fwdata --json
+bmr ... fwdata
 ```
 
 Ensure all units report the expected FW build before enabling STORE to NVM.
@@ -179,7 +178,7 @@ Plan a brief service window (rail drop) if the device restarts output.
 ## id — Manufacturer identification strings
 
 ```bash
-bmr ... id [--json] [--pretty]
+bmr ... id
 ```
 
 ### What it does
@@ -193,7 +192,7 @@ are trimmed of trailing NUL/CR/LF.
 Quick field identification, test the i2c/PMBus:
 
 ```bash
-bmr ... id --json
+bmr ... id
 ```
 
 Match model and revision to your qualification matrix before running
@@ -355,8 +354,7 @@ Then use `operation set --margin high|low` during validation.
 ## Notes & best practices
 
 * **Linear formats**: The tool reads `VOUT_MODE` to scale VOUT and uses
-  LIN-11/LIN-16 for other readings. Always script against `--json` to avoid
-  locale/format surprises.
+  LIN-11/LIN-16 for other readings.
 
 * **STORE/RESTORE**: When persisting configuration (`STORE_*`), allow ~5–10 ms
   for NVM writes before re-accessing. Avoid frequent stores to extend NVM life.
@@ -372,15 +370,15 @@ Then use `operation set --margin high|low` during validation.
 
 ```bash
 # Status & sensors
-bmr --bus /dev/i2c-1 --addr 0x40 read all --json --pretty
-bmr --bus /dev/i2c-1 --addr 0x40 status --json --pretty
+bmr --bus /dev/i2c-1 --addr 0x40 read all
+bmr --bus /dev/i2c-1 --addr 0x40 status
 
 # ID & firmware
-bmr --bus /dev/i2c-1 --addr 0x40 id --json --pretty
-bmr --bus /dev/i2c-1 --addr 0x40 fwdata --json --pretty
+bmr --bus /dev/i2c-1 --addr 0x40 id
+bmr --bus /dev/i2c-1 --addr 0x40 fwdata
 
 # Snapshot debug
-bmr --bus /dev/i2c-1 --addr 0x40 snapshot --cycle 0 --decode --json --pretty
+bmr --bus /dev/i2c-1 --addr 0x40 snapshot --cycle 0 --decode
 
 # PG/Multi-Pin config
 bmr --bus /dev/i2c-1 --addr 0x40 mfr-multi-pin set --pg highz --pg-enable 1
