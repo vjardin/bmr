@@ -64,7 +64,7 @@ usage(const char *p) {
 
 int
 main(int argc, char *const *argv) {
-  static const char* Lopt = "b:a:Ph";
+  static const char* Lopt = "+b:a:Ph";
   static const struct option L[] = {
       { "bus", required_argument, NULL, 'b' }
     , { "addr", required_argument, NULL, 'a' }
@@ -92,12 +92,15 @@ main(int argc, char *const *argv) {
         break;
     }
   }
+
   if (optind >= argc) {
     usage(argv[0]);
     return EXIT_FAILURE;
   }
 
   const char *cmd = argv[optind++];
+  optind = 0; /* reset */
+
   int fd = pmbus_open(opt_bus, opt_addr);
   if (fd < 0) {
     perror("open bus");
@@ -105,9 +108,11 @@ main(int argc, char *const *argv) {
   }
 
   int rc = EXIT_SUCCESS;
+  int sub_argc = argc - optind;
+  char * const *sub_argv = &argv[optind];
 
   if (!strcmp(cmd, "read")) {
-    rc = cmd_read(fd, argc - optind, &argv[optind], opt_pretty);
+    rc = cmd_read(fd, sub_argc, sub_argv, opt_pretty);
     goto fini;
   }
 
@@ -117,19 +122,20 @@ main(int argc, char *const *argv) {
   }
 
   if (!strcmp(cmd, "snapshot")) {
-    rc = cmd_snapshot(fd, argc - optind, &argv[optind]);
+    rc = cmd_snapshot(fd, sub_argc, sub_argv);
     goto fini;
   }
 
   if (!strcmp(cmd, "mfr-multi-pin")) {
-    rc = cmd_multipin(fd, argc - optind, &argv[optind]);
+    rc = cmd_multipin(fd, sub_argc, sub_argv);
     goto fini;
   }
 
   if (!strcmp(cmd, "id")) {
-    rc = cmd_mfr_id(fd, argc - optind, &argv[optind]);
+    rc = cmd_mfr_id(fd, sub_argc, sub_argv);
     goto fini;
   }
+
   if (!strcmp(cmd, "fwdata")) {
     rc = cmd_fwdata(fd, opt_pretty);
     goto fini;
@@ -141,27 +147,27 @@ main(int argc, char *const *argv) {
   }
 
   if (!strcmp(cmd, "user-data")) {
-    rc = cmd_user_data(fd, argc - optind, &argv[optind], opt_pretty);
+    rc = cmd_user_data(fd, sub_argc, sub_argv, opt_pretty);
     goto fini;
   }
 
   if (!strcmp(cmd, "timing")) {
-    rc = cmd_timing(fd, argc - optind, &argv[optind], opt_pretty);
+    rc = cmd_timing(fd, sub_argc, sub_argv, opt_pretty);
     goto fini;
   }
 
   if (!strcmp(cmd, "onoff")) {
-    rc = cmd_onoff(fd, argc - optind, &argv[optind], opt_pretty);
+    rc = cmd_onoff(fd, sub_argc, sub_argv, opt_pretty);
     goto fini;
   }
 
   if (!strcmp(cmd, "operation")) {
-    rc = cmd_operation(fd, argc - optind, &argv[optind], opt_pretty);
+    rc = cmd_operation(fd, sub_argc, sub_argv, opt_pretty);
     goto fini;
   }
 
   if (!strcmp(cmd, "vout")) {
-    rc = cmd_vout(fd, argc - optind, &argv[optind], opt_pretty);
+    rc = cmd_vout(fd, sub_argc, sub_argv, opt_pretty);
     goto fini;
   }
 
