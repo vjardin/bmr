@@ -5,7 +5,7 @@
 #include "mfr_snapshot.h"
 #include "mfr_multipin.h"
 #include "mfr_id.h"
-
+#include "timing_cmd.h"
 #include "read_cmd.h"
 #include "status_cmd.h"
 #include "mfr_fwdata.h"
@@ -37,6 +37,12 @@ usage(const char *p) {
 "  fwdata\n"
 "  restart\n"
 "  user-data get|set [--hex XX..|--ascii STR] [--store|--restore]\n"
+"  timing get|set [--profile safe|sequenced|fast|prebias]\n"
+"                 [--ton-delay MS] [--ton-rise MS] [--ton-max-fault MS]\n"
+"                 [--toff-delay MS] [--toff-fall MS] [--toff-max-warn MS]\n"
+"                 [--fault-byte 0xHH]\n"
+"                 [--fault-response disable-retry|disable-until-cleared|ignore]\n"
+"                 [--retries 0..7] [--delay-units 0..7]\n"
 "\n"
 "Default:\n"
 "  i2c DEV=%s addr=0x%02x\n"
@@ -128,6 +134,11 @@ main(int argc, char *const *argv) {
 
   if (!strcmp(cmd, "user-data")) {
     rc = cmd_user_data(fd, argc - optind, &argv[optind], opt_pretty);
+    goto fini;
+  }
+
+  if (!strcmp(cmd, "timing")) {
+    rc = cmd_timing(fd, argc - optind, &argv[optind], opt_pretty);
     goto fini;
   }
 
