@@ -17,6 +17,3 @@ jansson_dep = dependency('jansson', required: true)
 libi2c_dep = cc.find_library('i2c', required: true)
 
 subdir('src')
-
-install_data('README.md', install_dir: get_option('datadir') / 'doc' / meson.project_name())
-install_data('LICENSE',   install_dir: get_option('datadir') / 'doc' / meson.project_name())
