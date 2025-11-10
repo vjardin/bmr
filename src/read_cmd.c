@@ -13,6 +13,44 @@ out_double(const char *k, double v, int pretty) {
   json_print_or_pretty(o, pretty);
 }
 
+enum enc_t { ENC_LIN11, ENC_LIN16U, ENC_RAW_INT };
+
+static void
+add_read_field(json_t *o, const char *key, int fd, uint8_t reg, enum enc_t enc, int exp5) {
+  int w = pmbus_rd_word(fd, reg);
+  if (w < 0)
+    return;
+
+  switch (enc) {
+  case ENC_LIN11:
+    json_object_set_new(o, key, json_real(pmbus_lin11_to_double((uint16_t)w)));
+    break;
+  case ENC_LIN16U:
+    json_object_set_new(o, key, json_real(pmbus_lin16u_to_double((uint16_t)w, exp5)));
+    break;
+  case ENC_RAW_INT:
+    json_object_set_new(o, key, json_integer(w));
+    break;
+  }
+
+  json_object_set_new(o, key + (sizeof("") - 1), json_object_get(o, key));
+}
+
+static json_t *
+build_read_all_json(int fd, int exp5) {
+  json_t *o = json_object();
+
+  add_read_field(o, "vin_V",       fd, PMBUS_READ_VIN,            ENC_LIN11,  0);
+  add_read_field(o, "vout_V",      fd, PMBUS_READ_VOUT,           ENC_LIN16U, exp5);
+  add_read_field(o, "iout_A",      fd, PMBUS_READ_IOUT,           ENC_LIN11,  0);
+  add_read_field(o, "temp1_C",     fd, PMBUS_READ_TEMPERATURE_1,  ENC_LIN11,  0);
+  add_read_field(o, "temp2_C",     fd, PMBUS_READ_TEMPERATURE_2,  ENC_LIN11,  0);
+  add_read_field(o, "duty_pct",    fd, PMBUS_READ_DUTY_CYCLE,     ENC_LIN11,  0);
+  add_read_field(o, "freq_khz_raw",fd, PMBUS_READ_FREQUENCY,      ENC_RAW_INT,0);
+
+  return o;
+}
+
 int
 cmd_read(int fd, int argc, char *const *argv, int pretty) {
   const char *what = (argc >= 1) ? argv[0] : "all";
@@ -21,29 +59,7 @@ cmd_read(int fd, int argc, char *const *argv, int pretty) {
   pmbus_get_vout_mode_exp(fd, &exp5);
 
   if (!strcmp(what, "all")) {
-    int vin = pmbus_rd_word(fd, PMBUS_READ_VIN);
-    int vout = pmbus_rd_word(fd, PMBUS_READ_VOUT);
-    int iout = pmbus_rd_word(fd, PMBUS_READ_IOUT);
-    int t1 = pmbus_rd_word(fd, PMBUS_READ_TEMPERATURE_1);
-    int t2 = pmbus_rd_word(fd, PMBUS_READ_TEMPERATURE_2);
-    int duty = pmbus_rd_word(fd, PMBUS_READ_DUTY_CYCLE);
-    int freq = pmbus_rd_word(fd, PMBUS_READ_FREQUENCY);
-
-    json_t *o = json_object();
-    if (vin >= 0)
-      json_object_set_new(o, "vin_V", json_real(pmbus_lin11_to_double((uint16_t) vin)));
-    if (vout >= 0)
-      json_object_set_new(o, "vout_V", json_real(pmbus_lin16u_to_double((uint16_t) vout, exp5)));
-    if (iout >= 0)
-      json_object_set_new(o, "iout_A", json_real(pmbus_lin11_to_double((uint16_t) iout)));
-    if (t1 >= 0)
-      json_object_set_new(o, "temp1_C", json_real(pmbus_lin11_to_double((uint16_t) t1)));
-    if (t2 >= 0)
-      json_object_set_new(o, "temp2_C", json_real(pmbus_lin11_to_double((uint16_t) t2)));
-    if (duty >= 0)
-      json_object_set_new(o, "duty_pct", json_real(pmbus_lin11_to_double((uint16_t) duty)));
-    if (freq >= 0)
-      json_object_set_new(o, "freq_khz_raw", json_integer(freq));
+    json_t *o = build_read_all_json(fd, exp5);
 
     json_print_or_pretty(o, pretty);
 
