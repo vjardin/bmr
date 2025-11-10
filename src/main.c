@@ -99,7 +99,6 @@ main(int argc, char *const *argv) {
   }
 
   const char *cmd = argv[optind++];
-  optind = 0; /* reset */
 
   int fd = pmbus_open(opt_bus, opt_addr);
   if (fd < 0) {
@@ -110,6 +109,8 @@ main(int argc, char *const *argv) {
   int rc = EXIT_SUCCESS;
   int sub_argc = argc - optind;
   char * const *sub_argv = &argv[optind];
+
+  optind = 0; /* reset */
 
   if (!strcmp(cmd, "read")) {
     rc = cmd_read(fd, sub_argc, sub_argv, opt_pretty);
