@@ -6,7 +6,10 @@
 #include <jansson.h>
 
 int
-cmd_status(int fd, int pretty) {
+cmd_status(int fd, int argc, char *const *argv, int pretty) {
+  (void)argc;
+  (void)argv;
+
   json_t *o = json_object();
 
   int sb = pmbus_rd_byte(fd, PMBUS_STATUS_BYTE);

@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 
 #include "pmbus_io.h"
+#include "util_json.h"
+
 #include <jansson.h>
 #include <string.h>
 #include <stdio.h>
@@ -63,7 +65,7 @@ encode(const char *mode, const char *pg, int pg_en, int sec_rc, uint8_t *out) {
 }
 
 int
-cmd_multipin(int fd, int argc, char * const * argv) {
+cmd_multipin(int fd, int argc, char * const * argv, int pretty) {
   if (argc < 1) {
     fprintf(stderr, "mfr-multi-pin get|set ...\n");
     return 2;
@@ -78,11 +80,7 @@ cmd_multipin(int fd, int argc, char * const * argv) {
 
     json_t *o = decode((uint8_t) v);
 
-    char *s = json_dumps(o, JSON_INDENT(2));
-    puts(s);
-    free(s);
-
-    json_decref(o);
+    json_print_or_pretty(o, pretty);
 
     return 0;
   }
@@ -112,7 +110,10 @@ cmd_multipin(int fd, int argc, char * const * argv) {
       perror("write MFR_MULTI_PIN_CONFIG");
       return 1;
     }
-    printf("OK 0x%02X\n", v);
+
+    json_t *o = decode(v);
+    json_object_set_new(o, "result", json_string("OK"));
+    json_print_or_pretty(o, pretty);
 
     return 0;
   }

@@ -117,22 +117,22 @@ main(int argc, char *const *argv) {
   }
 
   if (!strcmp(cmd, "status")) {
-    rc = cmd_status(fd, opt_pretty);
+    rc = cmd_status(fd, sub_argc, sub_argv, opt_pretty);
     goto fini;
   }
 
   if (!strcmp(cmd, "snapshot")) {
-    rc = cmd_snapshot(fd, sub_argc, sub_argv);
+    rc = cmd_snapshot(fd, sub_argc, sub_argv, opt_pretty);
     goto fini;
   }
 
   if (!strcmp(cmd, "mfr-multi-pin")) {
-    rc = cmd_multipin(fd, sub_argc, sub_argv);
+    rc = cmd_multipin(fd, sub_argc, sub_argv, opt_pretty);
     goto fini;
   }
 
   if (!strcmp(cmd, "id")) {
-    rc = cmd_mfr_id(fd, sub_argc, sub_argv);
+    rc = cmd_mfr_id(fd, sub_argc, sub_argv, opt_pretty);
     goto fini;
   }
 

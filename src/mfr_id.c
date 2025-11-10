@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 
 #include "pmbus_io.h"
-#include "util_json.h"		// json_print_or_pretty(..) and rd_block_string(..)
+#include "util_json.h"
 #include <jansson.h>
 #include <stdint.h>
 
@@ -24,7 +24,7 @@ rd_pmbus_revision (int fd, json_t *root)
 }
 
 int
-cmd_mfr_id (int fd, int argc, char *const *argv)
+cmd_mfr_id (int fd, int argc, char *const *argv, int pretty)
 {
   (void) argc;
   (void) argv;
@@ -40,7 +40,7 @@ cmd_mfr_id (int fd, int argc, char *const *argv)
   rd_block_string (fd, MFR_DATE, "MFR_DATE", root);
   rd_block_string (fd, MFR_SERIAL, "MFR_SERIAL", root);
 
-  json_print_or_pretty (root, 1);
+  json_print_or_pretty (root, pretty);
 
   return 0;
 }

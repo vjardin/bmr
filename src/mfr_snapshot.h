@@ -4,4 +4,4 @@
 
 #include <jansson.h>
 
-int cmd_snapshot(int fd, int argc, char * const * argv);
+int cmd_snapshot(int fd, int argc, char * const * argv, int pretty);

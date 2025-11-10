@@ -1,11 +1,14 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 
 #include "pmbus_io.h"
-
 #include "decoders.h"
+#include "util_json.h"
+
 #include <jansson.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
 
 static json_t *
 decode_snapshot_block(int fd, const uint8_t *b, int n) {
@@ -43,10 +46,11 @@ decode_snapshot_block(int fd, const uint8_t *b, int n) {
 }
 
 int
-cmd_snapshot(int fd, int argc, char * const *argv) {
+cmd_snapshot(int fd, int argc, char * const *argv, int pretty) {
   int cycle = -1;
   bool decode = false;
 
+  /* TODO: switch to getopt_long() */
   for (int i = 0; i < argc; i++) {
     if (!strcmp(argv[i], "--cycle") && i + 1 < argc)
       cycle = atoi(argv[++i]);
@@ -87,10 +91,7 @@ cmd_snapshot(int fd, int argc, char * const *argv) {
     json_object_set_new(o, "decoded", decode_snapshot_block(fd, blk, n));
   }
 
-  char *dump = json_dumps(o, JSON_INDENT(2));
-  puts(dump);
-  free(dump);
-  json_decref(o);
+  json_print_or_pretty(o, pretty);
 
   return 0;
 }
