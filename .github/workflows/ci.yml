@@ -39,10 +39,11 @@ jobs:
         with:
           apt: >
             meson ninja-build pkg-config
-            libjansson-dev
-            i2c-tools
             clang
             build-essential
+            libjansson-dev
+            i2c-tools
+            libi2c-dev
 
       - name: Select compiler
         run: |
