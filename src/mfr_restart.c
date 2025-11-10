@@ -5,9 +5,9 @@
 
 int
 cmd_restart(int fd) {
-  const char *s = "00000000";
+  const char *s = "ERIC";
 
-  if (pmbus_wr_block(fd, MFR_RESTART, (const uint8_t *) s, 8) < 0) {
+  if (pmbus_wr_block(fd, MFR_RESTART, (const uint8_t *) s, 4) < 0) {
     perror("MFR_RESTART");
     return 1;
   }
