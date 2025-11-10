@@ -3,41 +3,34 @@ run-name: ${{ github.actor }} build matrix
 
 on:
   push:
-    branches:
-      - '**'
+    branches: ['**']
   pull_request:
-    branches:
-      - '**'
+    branches: ['**']
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-bmr:
     name: bmr ${{ matrix.compiler }} / ${{ matrix.arch }} / ${{ matrix.build_mode }}
-    runs-on: ${{ matrix.runs_on }}
-    permissions:
-      packages: read
-      actions: read
-      contents: read
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
+        os: [ ubuntu-latest ]
         arch: [ x86_64, arm64 ]
         compiler: [ gcc, clang ]
-        build_mode: [ normal, fully_static ]
-        include:
-          - arch: x86_64
-            runs_on: ubuntu-24.04
-          - arch: arm64
-            runs_on: ubuntu-24.04-arm64
+        build_mode: [ normal, static_libs ]
     env:
       MESON_BUILD_DIR: build
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Install packages (Meson + deps)
         uses: ConorMacBride/install-package@v1
         with:
-          apt: >
+          apt: >-
             meson ninja-build pkg-config
             clang
             build-essential
@@ -45,50 +38,34 @@ jobs:
             i2c-tools
             libi2c-dev
 
-      - name: Select compiler
+      - name: Set default compiler (env)
         run: |
           if [ "${{ matrix.compiler }}" = "gcc" ]; then
             echo "CC=gcc" >> $GITHUB_ENV
-            echo "CFLAGS=-O2 -Wall" >> $GITHUB_ENV
           else
             echo "CC=clang" >> $GITHUB_ENV
-            echo "CFLAGS=-O2 -Wall" >> $GITHUB_ENV
           fi
+          echo "CFLAGS=-O2 -Wall -Wextra" >> $GITHUB_ENV
 
       - name: Meson setup
         run: |
           rm -rf "${MESON_BUILD_DIR}"
-          if [ "${{ matrix.build_mode }}" = "fully_static" ]; then
+          if [ "${{ matrix.build_mode }}" = "static_libs" ]; then
             meson setup "${MESON_BUILD_DIR}" -Dfully_static=true
           else
             meson setup "${MESON_BUILD_DIR}" -Dfully_static=false
           fi
 
       - name: Compile
-        run: |
-          meson compile -C "${MESON_BUILD_DIR}"
-          ls -l "${MESON_BUILD_DIR}/src" || true
+        run: meson compile -C "${MESON_BUILD_DIR}" -v
 
-      - name: Basic run (version/help)
+      - name: Verify binary and link composition
         run: |
-          if [ -x "${MESON_BUILD_DIR}/src/bmr" ]; then
-            "${MESON_BUILD_DIR}/src/bmr" --help || true
-          else
-            echo "Binary not found!"
-            exit 1
-          fi
+          file "${MESON_BUILD_DIR}/src/bmr" || exit 1
+          ldd "${MESON_BUILD_DIR}/src/bmr" || true
+          "${MESON_BUILD_DIR}/src/bmr" --help || true
 
-      - name: Upload bmr artifacts
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: bmr-${{ matrix.compiler }}-${{ matrix.arch }}-${{ matrix.build_mode }}
-          path: |
-            ${MESON_BUILD_DIR}/src/bmr
-
-      - name: Summary
-        run: |
-            echo "Built bmr with:"
-            echo "  arch        = ${{ matrix.arch }}"
-            echo "  compiler    = ${{ matrix.compiler }}"
-            echo "  build_mode  = ${{ matrix.build_mode }}"
-            file "${MESON_BUILD_DIR}/src/bmr" || true
+          name: bmr-${{ matrix.compiler }}-${{ matrix.arch }}-${{ matrix.build_mode }}-${{ matrix.os }}
+          path: ${{ env.MESON_BUILD_DIR }}/src/bmr
