@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 
 #include "pmbus_io.h"
+#include "util_lin.h"
 
 #include <linux/i2c-dev.h>
 #include <i2c/smbus.h>
@@ -71,6 +72,7 @@ pmbus_send_byte(int fd, uint8_t cmd) {
   return i2c_smbus_write_byte(fd, cmd);
 }
 
+/* see PMBus-Specification-Rev-1-3-1-Part-II-20150313.pdf, section 8.3 */
 int
 pmbus_get_vout_mode_exp(int fd, int *exp_out) {
   int v = pmbus_rd_byte(fd, PMBUS_VOUT_MODE);
@@ -105,8 +107,7 @@ pmbus_lin11_to_double(uint16_t raw) {
 
 double
 pmbus_lin16u_to_double(uint16_t raw, int exp5) {
-  /* value = raw * 2^exp5 */
-  return ldexp((double)raw, exp5);
+  return lin16u_to_units(raw, exp5);
 }
 
 uint16_t

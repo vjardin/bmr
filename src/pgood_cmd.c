@@ -1,13 +1,13 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 #include "pmbus_io.h"
 #include "util_json.h"
+#include "util_lin.h"
 
 #include <jansson.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <math.h>
 
 static void
 usage_pgood(void) {
@@ -104,13 +104,7 @@ cmd_pgood(int fd, int argc, char *const *argv, int pretty) {
         return 2;
       }
       double v = strtod(on_v, NULL);
-      /* N = v * 2^(−exp5) */
-      double scaled = ldexp(v, -exp5);
-      if (scaled < 0.0)
-        scaled = 0.0;
-      if (scaled > 65535.0)
-        scaled = 65535.0;
-      won = (uint16_t) (scaled + 0.5);
+      won = units_to_lin16u(v, exp5);
 
       set_on = 1;
     }
@@ -122,13 +116,7 @@ cmd_pgood(int fd, int argc, char *const *argv, int pretty) {
         return 2;
       }
       double v = strtod(off_v, NULL);
-      /* N = v * 2^(−exp5) */
-      double scaled = ldexp(v, -exp5);
-      if (scaled < 0.0)
-        scaled = 0.0;
-      if (scaled > 65535.0)
-        scaled = 65535.0;
-      wof = (uint16_t) (scaled + 0.5);
+      wof = units_to_lin16u(v, exp5);
 
       set_off = 1;
     }

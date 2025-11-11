@@ -2,6 +2,7 @@
 
 #include "pmbus_io.h"
 #include "util_json.h"
+#include "util_lin.h"
 #include <jansson.h>
 #include <string.h>
 #include <stdlib.h>
@@ -21,20 +22,13 @@
 static inline double
 lin16u_to_volts(uint16_t y, int exp5) {
   /* V = Y * 2^N */
-  return (double) y *ldexp(1.0, exp5);
+  return lin16u_to_units(y, exp5);
 }
 
 static inline uint16_t
 volts_to_lin16u(double v, int exp5) {
   /* Y = round(V * 2^{-N}) */
-  double scaled = v * ldexp(1.0, -exp5);
-  if (scaled < 0.0)
-    scaled = 0.0;
-  if (scaled > 65535.0)
-    scaled = 65535.0;
-
-  /* scaled is clamped to [0, 65535] already: llround(scaled), avoid libm */
-  return (uint16_t)(scaled + 0.5);
+  return units_to_lin16u(v, exp5);
 }
 
 static int
