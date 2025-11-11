@@ -36,7 +36,11 @@ enum PMBus_opcodes : uint8_t {
   PMBUS_RESTORE_DEFAULT_ALL       = 0x12,
   PMBUS_STORE_USER_ALL            = 0x15,
   PMBUS_RESTORE_USER_ALL          = 0x16,
+  PMBUS_STORE_USER_CODE           = 0x17, /* not supported with BMR devices */
+  PMBUS_RESTORE_USER_CODE         = 0x18, /* not supported with BMR devices */
   PMBUS_CAPABILITY                = 0x19,
+  PMBUS_QUERY                     = 0x1A, /* not supported with BMR devices */
+  PMBUS_SMBALERT_MASK             = 0x1B,
 
   /* Output programming / scaling */
   PMBUS_VOUT_MODE                 = 0x20,
@@ -55,6 +59,7 @@ enum PMBus_opcodes : uint8_t {
   PMBUS_FREQUENCY_SWITCH          = 0x33,
   PMBUS_VIN_ON                    = 0x35,
   PMBUS_VIN_OFF                   = 0x36,
+  PMBUS_INTERLEAVE                = 0x37,
   PMBUS_IOUT_CAL_GAIN             = 0x38,
   PMBUS_IOUT_CAL_OFFSET           = 0x39,
 
@@ -135,9 +140,11 @@ enum PMBus_opcodes : uint8_t {
   MFR_GET_SNAPSHOT                = 0xD7, /* BMR685 */
   MFR_TEMP_COMPENSATION           = 0xD8, /* BMR685 */
   MFR_SET_ROM_MODE                = 0xD9, /* BMR685 */
+  MFR_GET_RAMP_DATA               = 0xDB,
   MFR_SELECT_TEMPERATURE_SENSOR   = 0xDC,
   MFR_VIN_OFFSET                  = 0xDD,
   MFR_VOUT_OFFSET_MONITOR         = 0xDE,
+  MFR_GET_STATUS_DATA             = 0xDF,
   MFR_SPECIAL_OPTIONS             = 0xE0, /* BMR685 */
   MFR_TEMP_OFFSET_INT             = 0xE1,
   MFR_REMOTE_TEMP_CAL             = 0xE2,
@@ -179,3 +186,5 @@ double pmbus_lin16u_to_double(uint16_t raw, int exp5);
 
 uint16_t le16(const uint8_t * p);
 uint32_t le32(const uint8_t * p);
+
+int parse_u16(const char *s, uint16_t *out);

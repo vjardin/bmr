@@ -351,6 +351,230 @@ bmr ... vout set --set-all 0.90 --margin-pct 5
 
 Then use `operation set --margin high|low` during validation.
 
+## capability — PMBus CAPABILITY (0x19) decode & checks
+
+```bash
+bmr ... capability get
+bmr ... capability check --need-pec on|off --min-speed 100|400 --need-alert on|off [--strict]
+```
+
+### What it does
+
+Decodes `PMBUS_CAPABILITY` into `pec_supported`, `max_bus_speed` (100/400 kHz),
+`smbalert_supported`, and reserved bits. `check` compares against requirements
+and returns `{checks:{...}, mismatches:[...]}`.
+
+### Use case
+
+Guard-rail in bring-up scripts to assert 400 kHz + PEC + ALERT:
+
+```bash
+bmr ... capability check --need-pec on --min-speed 400 --need-alert on --strict
+```
+
+## interleave — Phase count & index (INTERLEAVE 0x37)
+
+```bash
+bmr ... interleave get
+bmr ... interleave set [--set 0xNN] [--phases 1..16 --index 0..15]
+```
+
+### What it does
+
+Reads/writes the `INTERLEAVE` byte (upper nibble = phases-1, lower nibble =
+phase index). Some devices may ignore or restrict settings.
+
+### Use case
+
+Set a 2-phase configuration on phase index 0:
+
+```bash
+bmr ... interleave set --phases 2 --index 0
+```
+
+## hrr — MFR_SPECIAL_OPTIONS (0xE0) bit control
+
+```bash
+bmr ... hrr get
+bmr ... hrr set [--pec on|off] [--hrr on|off] [--dls linear|nonlinear] \
+                [--artdlc on|off] [--dbv on|off]
+bmr ... hrr set --raw 0xNN
+```
+
+### What it does
+
+Controls `MFR_SPECIAL_OPTIONS` bits such as **PEC require**, **HRR**, **DLS** slope,
+**ART/DLC**, **DBV**. Writes only the requested bits or the raw byte.
+
+### Use case
+
+Enable HRR and non-linear droop:
+
+```bash
+bmr ... hrr set --hrr on --dls nonlinear
+```
+
+> If you turn **PEC on**, your SMBus stack must send PEC.
+
+## vin — VIN_ON/OFF thresholds
+
+```bash
+bmr ... vin get [--exp5 N] [--raw]
+bmr ... vin set [--on V] [--off V] [--exp5 N] \
+                | [--on-raw 0xNNNN] [--off-raw 0xNNNN]
+```
+
+### What it does
+
+Programs `VIN_ON (0x35)` and `VIN_OFF (0x36)` using LIN-16u (`--exp5`) or raw
+words. Use raw if exponent is unknown.
+
+### Use case
+
+Require VIN ≥ 7.5 V to start, stop below 6.8 V:
+
+```bash
+bmr ... vin set --on 7.5 --off 6.8 --exp5 -13
+```
+
+## pgood — POWER_GOOD window
+
+```bash
+bmr ... pgood get [--exp5 N] [--raw]
+bmr ... pgood set [--on V] [--off V] [--exp5 N] \
+                  | [--on-raw 0xNNNN] [--off-raw 0xNNNN]
+```
+
+### What it does
+
+Controls `POWER_GOOD_ON (0x5E)` / `POWER_GOOD_OFF (0x5F)` (LIN-16u or raw).
+
+### Use case
+
+Ensure PG asserts when VOUT ≥ 96% and de-asserts ≤ 90%:
+
+```bash
+bmr ... pgood set --on 0.96 --off 0.90 --exp5 -13
+```
+
+## freq — Switching frequency setpoint
+
+```bash
+bmr ... freq get
+bmr ... freq set --raw 0xNNNN
+```
+
+### What it does
+
+Reads/writes the device’s frequency setpoint register (word). Register code and
+range are device-specific; use raw word.
+
+### Use case
+
+Bump frequency by a small step for EMI validation:
+
+```bash
+bmr ... freq set --raw 0x012C
+```
+
+## salert — SMBALERT# mask (0x1B)
+
+```bash
+bmr ... salert get
+bmr ... salert set --raw 0xNN
+```
+
+### What it does
+
+Reads/writes `SMBALERT_MASK` if implemented by the device. Useful to silence
+non-critical categories.
+
+### Use case
+
+Mask temperature warnings from ALERT while keeping faults:
+
+```bash
+bmr ... salert set --raw 0xXX  # choose per device map
+```
+
+## addr-offset — Address offset helper
+
+```bash
+bmr ... addr-offset get
+bmr ... addr-offset set --raw 0xNN
+```
+
+### What it does
+
+Reads/writes `MFR_OFFSET_ADDRESS` (if present) to apply a board-level offset to
+the base address.
+
+### Use case
+
+Shift module to `0x5A + 1`:
+
+```bash
+bmr ... addr-offset set --raw 0x01
+```
+
+## ramp-data — Vendor ramp capture (0xDB)
+
+```bash
+bmr ... ramp-data
+```
+
+### What it does
+
+Reads `MFR_GET_RAMP_DATA` and returns a hex blob. Format is vendor-specific.
+
+### Use case
+
+Capture ramp profile for offline analysis:
+
+```bash
+bmr ... ramp-data
+```
+
+## status-data — Vendor status dump (0xDF)
+
+```bash
+bmr ... status-data
+```
+
+### What it does
+
+Reads `MFR_GET_STATUS_DATA` (vendor snapshot of status bytes) as hex.
+
+### Use case
+
+Fetch condensed status history:
+
+```bash
+bmr ... status-data
+```
+
+## write-protect — WRITE_PROTECT (0x10)
+
+```bash
+bmr ... write-protect get
+bmr ... write-protect set [--none|--ctrl|--nvm|--all] | --raw 0xNN
+```
+
+### What it does
+
+Controls write protection policy. Typical values: `0x00` (none), `0x40` (control-only),
+`0x80` (NVM), `0xFF` (all). Exact semantics can vary per device.
+
+### Use case
+
+Lock NVM while allowing live control:
+
+```bash
+bmr ... write-protect set --ctrl
+```
+
+---
+
 ## Notes & best practices
 
 * **Linear formats**: The tool reads `VOUT_MODE` to scale VOUT and uses
@@ -377,8 +601,13 @@ bmr --bus /dev/i2c-1 --addr 0x40 status
 bmr --bus /dev/i2c-1 --addr 0x40 id
 bmr --bus /dev/i2c-1 --addr 0x40 fwdata
 
+# Capability & checks
+bmr --bus /dev/i2c-1 --addr 0x40 capability get
+bmr --bus /dev/i2c-1 --addr 0x40 capability check --need-pec on --min-speed 400 --need-alert on --strict
+
 # Snapshot debug
 bmr --bus /dev/i2c-1 --addr 0x40 snapshot --cycle 0 --decode
+bmr --bus /dev/i2c-1 --addr 0x40 status-data
 
 # PG/Multi-Pin config
 bmr --bus /dev/i2c-1 --addr 0x40 mfr-multi-pin set --pg highz --pg-enable 1
@@ -390,7 +619,19 @@ bmr --bus /dev/i2c-1 --addr 0x40 operation set --on --margin normal
 # Timing and sequencing
 bmr --bus /dev/i2c-1 --addr 0x40 timing set --profile sequenced --ton-delay 250 --ton-rise 100 --toff-fall 40
 
-# Voltage and margins
+# Voltage, margins, thresholds
 bmr --bus /dev/i2c-1 --addr 0x40 vout set --set-all 1.00 --margin-pct 5
-bmr --bus /dev/i2c-1 --addr 0x40 operation set --margin high
+bmr --bus /dev/i2c-1 --addr 0x40 vin set --on 7.5 --off 6.8 --exp5 -13
+bmr --bus /dev/i2c-1 --addr 0x40 pgood set --on 0.96 --off 0.90 --exp5 -13
+
+# HRR & options
+bmr --bus /dev/i2c-1 --addr 0x40 hrr set --hrr on --dls nonlinear
+
+# Frequency & interleave
+bmr --bus /dev/i2c-1 --addr 0x40 freq set --raw 0x012C
+bmr --bus /dev/i2c-1 --addr 0x40 interleave set --phases 2 --index 0
+
+# Alerts & protection
+bmr --bus /dev/i2c-1 --addr 0x40 salert get
+bmr --bus /dev/i2c-1 --addr 0x40 write-protect set --ctrl
 ```

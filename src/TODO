@@ -1,0 +1,3 @@
+* use getopt_long() for each subcommand
+* move hex/sprintf to util json
+* add a usage_long() for some complex commands
