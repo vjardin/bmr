@@ -5,12 +5,23 @@
 #include "mfr_snapshot.h"
 #include "mfr_multipin.h"
 #include "mfr_id.h"
+#include "mfr_hrr.h"
+#include "mfr_ramp_data.h"
+#include "mfr_addr_offset.h"
+#include "mfr_status_data.h"
 #include "timing_cmd.h"
 #include "read_cmd.h"
 #include "onoff_cmd.h"
 #include "operation_cmd.h"
 #include "status_cmd.h"
 #include "vout_cmd.h"
+#include "interleave_cmd.h"
+#include "vin_cmd.h"
+#include "pgood_cmd.h"
+#include "freq_cmd.h"
+#include "salert_cmd.h"
+#include "write_protect_cmd.h"
+#include "capability_cmd.h"
 #include "mfr_fwdata.h"
 #include "mfr_restart.h"
 #include "mfr_user_data.h"
@@ -51,6 +62,24 @@ usage(const char *p) {
 "  operation get|set [--on|--off] [--margin normal|low|high] [--raw 0xHH]\n"
 "  vout get|set [--command V] [--mhigh V] [--mlow V]\n"
 "               [--set-all NOM --margin-pct +/-PCT]\n"
+"  capability get\n"
+"  capability check [--need-pec on|off] [--min-speed 100|400] [--need-alert on|off] [--strict]\n"
+"  interleave get|set [--set 0xNN] [--phases 1..16 --index 0..15]\n"
+"  hrr get|set [--pec on|off] [--hrr on|off] [--dls linear|nonlinear]\n"
+"              [--artdlc on|off] [--dbv on|off] [--raw 0xNN]\n"
+"  vin get [--exp5 N] [--raw]\n"
+"  vin set [--on V] [--off V] [--exp5 N] | [--on-raw 0xNNNN] [--off-raw 0xNNNN]\n"
+"  pgood get [--exp5 N] [--raw]\n"
+"  pgood set [--on V] [--off V] [--exp5 N] | [--on-raw 0xNNNN] [--off-raw 0xNNNN]\n"
+"  freq get|set --raw 0xNNNN\n"
+"  salert get|set --raw 0xNN\n"
+"  addr-offset get|set --raw 0xNN\n"
+"  ramp-data\n"
+"  status-data\n"
+"  write-protect get|set [--none|--ctrl|--nvm|--all] | --raw 0xNN\n"
+"\n"
+"Hints:\n"
+"  * Use '<command> help' where available (e.g., 'hrr help', 'capability help') for detailed docs.\n"
 "\n"
 "Default:\n"
 "  i2c DEV=%s addr=0x%02x\n"
@@ -59,7 +88,6 @@ usage(const char *p) {
 , opt_bus
 , opt_addr
   );
-
 }
 
 int
@@ -171,6 +199,62 @@ main(int argc, char *const *argv) {
     rc = cmd_vout(fd, sub_argc, sub_argv, opt_pretty);
     goto fini;
   }
+
+  if (!strcmp(cmd, "interleave")) {
+    rc = cmd_interleave(fd, sub_argc, sub_argv, opt_pretty);
+    goto fini;
+  }
+
+  if (!strcmp(cmd, "hrr")) {
+    rc = cmd_hrr(fd, sub_argc, sub_argv, opt_pretty);
+    goto fini;
+  }
+
+  if (!strcmp(cmd, "vin")) {
+    rc = cmd_vin(fd, sub_argc, sub_argv, opt_pretty);
+    goto fini;
+  }
+
+  if (!strcmp(cmd, "pgood")) {
+    rc = cmd_pgood(fd, sub_argc, sub_argv, opt_pretty);
+    goto fini;
+  }
+
+  if (!strcmp(cmd, "freq")) {
+    rc = cmd_freq(fd, sub_argc, sub_argv, opt_pretty);
+    goto fini;
+  }
+
+  if (!strcmp(cmd, "salert")) {
+    rc = cmd_salert(fd, sub_argc, sub_argv, opt_pretty);
+    goto fini;
+  }
+
+  if (!strcmp(cmd, "addr-offset")) {
+    rc = cmd_addr_offset(fd, sub_argc, sub_argv, opt_pretty);
+    goto fini;
+  }
+
+  if (!strcmp(cmd, "ramp-data")) {
+    rc = cmd_ramp_data(fd, sub_argc, sub_argv, opt_pretty);
+    goto fini;
+  }
+
+  if (!strcmp(cmd, "status-data")) {
+    rc = cmd_status_data(fd, sub_argc, sub_argv, opt_pretty);
+    goto fini;
+  }
+
+  if (!strcmp(cmd, "write-protect")) {
+    rc = cmd_write_protect(fd, sub_argc, sub_argv, opt_pretty);
+    goto fini;
+  }
+
+  if (!strcmp(cmd, "capability")) {
+    rc = cmd_capability(fd, sub_argc, sub_argv, opt_pretty);
+    goto fini;
+  }
+
 
   usage(argv[0]);
   rc = EXIT_FAILURE;
