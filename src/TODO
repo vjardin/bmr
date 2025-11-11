@@ -1,3 +1,8 @@
 * use getopt_long() for each subcommand
 * move hex/sprintf to util json
 * add a usage_long() for some complex commands
+* improve main() using a table of token -> function
+* factorize the ldexp() from double to uint16_t, XXX libm is not needed when:
+  double scaled = (exp5 < 0)
+                  ? v * (double)(1u << (-exp5))   /* exp negative -> multiply */
+                  : v / (double)(1u << exp5);     /* exp zero/positive -> divide */
