@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <math.h>
 
 int
 pmbus_open(const char *dev, int addr7) {
@@ -98,15 +99,14 @@ pmbus_lin11_to_double(uint16_t raw) {
   if (mant & 0x400)
     mant |= ~0x7FF;
 
-  double scale = (exp >= 0) ? (1 << exp) : 1.0 / (1 << (-exp));
-
-  return (double)(mant * scale);
+  /* value = mantissa * 2^exp */
+  return ldexp((double)mant, exp);
 }
 
 double
 pmbus_lin16u_to_double(uint16_t raw, int exp5) {
-  double scale = (exp5 >= 0) ? (1 << exp5) : 1.0 / (1 << (-exp5));
-  return (double)(raw * scale);
+  /* value = raw * 2^exp5 */
+  return ldexp((double)raw, exp5);
 }
 
 uint16_t
