@@ -35,6 +35,11 @@ cmd_vin(int fd, int argc, char *const *argv, int pretty) {
         have_exp = 1;
       }
     }
+    if (!have_exp) {
+      /* Auto-discover exp5 from VOUT_MODE if not provided */
+      if (pmbus_get_vout_mode_exp(fd, &exp5) == 0)
+        have_exp = 1;
+    }
 
     int won = pmbus_rd_word(fd, PMBUS_VIN_ON);
     int wof = pmbus_rd_word(fd, PMBUS_VIN_OFF);
@@ -49,6 +54,7 @@ cmd_vin(int fd, int argc, char *const *argv, int pretty) {
     if (!raw && have_exp) {
       json_object_set_new(o, "VIN_ON_V", json_real(pmbus_lin16u_to_double((uint16_t) won, exp5)));
       json_object_set_new(o, "VIN_OFF_V", json_real(pmbus_lin16u_to_double((uint16_t) wof, exp5)));
+      json_object_set_new(o, "exp5", json_integer(exp5));
     }
 
     json_print_or_pretty(o, pretty);
@@ -94,8 +100,10 @@ cmd_vin(int fd, int argc, char *const *argv, int pretty) {
     }
 
     if (on_v) {
+      if (!have_exp && pmbus_get_vout_mode_exp(fd, &exp5) == 0)
+        have_exp = 1;
       if (!have_exp) {
-        fprintf(stderr, "--exp5 required with --on <V>\n");
+        fprintf(stderr, "--exp5 required with --on <V> (VOUT_MODE read failed)\n");
         return 2;
       }
       double v = strtod(on_v, NULL);
@@ -110,8 +118,10 @@ cmd_vin(int fd, int argc, char *const *argv, int pretty) {
       set_on = 1;
     }
     if (off_v) {
+      if (!have_exp && pmbus_get_vout_mode_exp(fd, &exp5) == 0)
+        have_exp = 1;
       if (!have_exp) {
-        fprintf(stderr, "--exp5 required with --off <V>\n");
+        fprintf(stderr, "--exp5 required with --off <V> (VOUT_MODE read failed)\n");
         return 2;
       }
       double v = strtod(off_v, NULL);
@@ -154,6 +164,8 @@ cmd_vin(int fd, int argc, char *const *argv, int pretty) {
     json_t *out = json_object();
     json_object_set_new(out, "changed", delta);
     json_object_set_new(out, "readback", after);
+    if (have_exp)
+      json_object_set_new(out, "exp5", json_integer(exp5));
 
     json_print_or_pretty(out, pretty);
 
