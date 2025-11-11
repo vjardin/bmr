@@ -7,6 +7,7 @@
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <stdlib.h>
 #include <errno.h>
 
 int
@@ -122,4 +123,21 @@ le32(const uint8_t *p) {
        | ((uint32_t) p[2] << 16)
        | ((uint32_t) p[3] << 24)
        ;
+}
+
+int
+parse_u16(const char *s, uint16_t *out) {
+  char *end = NULL;
+
+  errno = 0;
+  long v = strtol(s, &end, 0);
+  if (errno || !end || *end)
+    return -1;
+
+  if (v < 0 || v > 0xFFFF)
+    return -1;
+
+  *out = (uint16_t)v;
+
+  return 0;
 }
