@@ -30,15 +30,8 @@ cmd_status_data(int fd, int argc, char *const *argv, int pretty) {
     return 1;
   }
 
-  char *hex = (char *) malloc((size_t) n * 2 + 1);
-  for (int i = 0; i < n; i++)
-    sprintf(hex + 2 * i, "%02X", buf[i]);
-  hex[n * 2] = '\0';
-
   json_t *o = json_object();
-  json_object_set_new(o, "len", json_integer(n));
-  json_object_set_new(o, "hex", json_string(hex));
-  free(hex);
+  json_add_len_and_hex(o, "hex", buf, (size_t)n);
 
   json_print_or_pretty(o, pretty);
 
