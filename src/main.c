@@ -13,6 +13,8 @@
 #include "read_cmd.h"
 #include "onoff_cmd.h"
 #include "operation_cmd.h"
+#include "fault_cmd.h"
+#include "temp_cmd.h"
 #include "status_cmd.h"
 #include "vout_cmd.h"
 #include "interleave_cmd.h"
@@ -52,6 +54,8 @@ usage(const char *p) {
 "  restart\n"
 "  user-data get|set [--hex XX..|--ascii STR] [--store|--restore]\n"
 "  timing get|set [--profile safe|sequenced|fast|prebias]\n"
+"  fault get [all|temp|vin|vout|tonmax|iout]\n"
+"  fault temp set [--ot-delay 16s|32s|2^n] [--ot-mode disable-retry] [--ot-retries cont]\n"
 "                 [--ton-delay MS] [--ton-rise MS] [--ton-max-fault MS]\n"
 "                 [--toff-delay MS] [--toff-fall MS] [--toff-max-warn MS]\n"
 "                 [--fault-byte 0xHH]\n"
@@ -77,9 +81,12 @@ usage(const char *p) {
 "  ramp-data\n"
 "  status-data\n"
 "  write-protect get|set [--none|--ctrl|--nvm|--all] | --raw 0xNN\n"
+"  temp get  [all|ot|ut|warn]\n"
+"  temp set  [--ot-fault <C>] [--ut-fault <C>] [--ot-warn <C>] [--ut-warn <C>]\n"
+"  temp read [all|t1|t2|t3]\n"
 "\n"
 "Hints:\n"
-"  * Use '<command> help' where available (e.g., 'hrr help', 'capability help') for detailed docs.\n"
+"  * Use '<command> help' where available (e.g., 'hrr help', 'capability help', 'fault help') for detailed docs.\n"
 "\n"
 "Default:\n"
 "  i2c DEV=%s addr=0x%02x\n"
@@ -250,11 +257,20 @@ main(int argc, char *const *argv) {
     goto fini;
   }
 
+  if (!strcmp(cmd, "fault")) {
+    rc = cmd_fault(fd, sub_argc, sub_argv, opt_pretty);
+    goto fini;
+  }
+
+  if (!strcmp(cmd, "temp")) {
+    rc = cmd_temp(fd, sub_argc, sub_argv, opt_pretty);
+    goto fini;
+  }
+
   if (!strcmp(cmd, "capability")) {
     rc = cmd_capability(fd, sub_argc, sub_argv, opt_pretty);
     goto fini;
   }
-
 
   usage(argv[0]);
   rc = EXIT_FAILURE;

@@ -27,6 +27,8 @@ sources = [
   'salert_cmd.c',
   'write_protect_cmd.c',
   'capability_cmd.c',
+  'fault_cmd.c',
+  'temp_cmd.c',
   'util_json.c',
 ]
 

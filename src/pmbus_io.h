@@ -114,6 +114,7 @@ enum PMBus_opcodes : uint8_t {
   PMBUS_READ_IOUT                 = 0x8C,
   PMBUS_READ_TEMPERATURE_1        = 0x8D,
   PMBUS_READ_TEMPERATURE_2        = 0x8E,
+  PMBUS_READ_TEMPERATURE_3        = 0x8F,
   PMBUS_READ_DUTY_CYCLE           = 0x94,
   PMBUS_READ_FREQUENCY            = 0x95,
 
