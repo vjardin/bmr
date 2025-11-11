@@ -78,14 +78,7 @@ cmd_snapshot(int fd, int argc, char * const *argv, int pretty) {
 
   json_t *o = json_object();
   json_object_set_new(o, "len", json_integer(n));
-
-  char *hex = malloc(n * 2 + 1);
-  for (int i = 0; i < n; i++)
-    sprintf(hex + 2 * i, "%02X", blk[i]);
-  hex[n * 2] = '\0';
-
-  json_object_set_new(o, "hex", json_string(hex));
-  free(hex);
+  json_add_hex_ascii(o, "hex", blk, (size_t)n);
 
   if (decode && n >= 32) {
     json_object_set_new(o, "decoded", decode_snapshot_block(fd, blk, n));
