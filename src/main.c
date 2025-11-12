@@ -67,7 +67,7 @@ usage(const char *p) {
 "  vout get|set [--command V] [--mhigh V] [--mlow V]\n"
 "               [--set-all NOM --margin-pct +/-PCT]\n"
 "  capability get\n"
-"  capability check [--need-pec on|off] [--min-speed 100|400] [--need-alert on|off] [--strict]\n"
+"  capability check [--need-pec on|off] [--min-speed 100|400|1000] [--need-alert on|off] [--strict]\n"
 "  interleave get|set [--set 0xNN] [--phases 1..16 --index 0..15]\n"
 "  hrr get|set [--pec on|off] [--hrr on|off] [--dls linear|nonlinear]\n"
 "              [--artdlc on|off] [--dbv on|off] [--raw 0xNN]\n"

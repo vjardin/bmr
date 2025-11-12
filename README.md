@@ -355,7 +355,7 @@ Then use `operation set --margin high|low` during validation.
 
 ```bash
 bmr ... capability get
-bmr ... capability check --need-pec on|off --min-speed 100|400 --need-alert on|off [--strict]
+bmr ... capability check --need-pec on|off --min-speed 100|400|1000 --need-alert on|off [--strict]
 ```
 
 ### What it does
