@@ -8,15 +8,18 @@
 #include <stdlib.h>
 #include <errno.h>
 
-static void usage_cap_short(void) {
+static void
+usage_cap_short(void) {
   fprintf(stderr,
 "capability get\n"
-"capability check [--need-pec on|off] [--min-speed 100|400] [--need-alert on|off] [--strict]\n"
+"capability check [--need-pec on|off] [--min-speed 100|400|1000] [--need-alert on|off]\n"
+"                 [--need-fp on|off] [--need-avsbus on|off] [--strict]\n"
 "capability help\n"
   );
 }
 
-static void usage_cap_long(void) {
+static void
+usage_cap_long(void) {
   fprintf(stderr,
 "\n"
 "NAME\n"
@@ -24,13 +27,17 @@ static void usage_cap_long(void) {
 "\n"
 "SYNOPSIS\n"
 "  capability get\n"
-"  capability check [--need-pec on|off] [--min-speed 100|400] [--need-alert on|off] [--strict]\n"
+"  capability check [--need-pec on|off] [--min-speed 100|400|1000]\n"
+"                   [--need-alert on|off] [--need-fp on|off] [--need-avsbus on|off]\n"
+"                   [--strict]\n"
 "\n"
 "DESCRIPTION (0x19 is a READ BYTE)\n"
 "  Bit 7   : PEC support (1 = device supports SMBus Packet Error Checking)\n"
-"  Bits 6:5: Max bus speed code (00=100 kHz, 01=400 kHz, 10/11 reserved)\n"
+"  Bits 6:5: Max bus speed code (00=100 kHz, 01=400 kHz, 10=1 MHz, 11=reserved)\n"
 "  Bit 4   : SMBALERT# support (1 = device supports alert protocol/pin)\n"
-"  Bits 3:0: Reserved (should be 0)\n"
+"  Bit 3   : Numeric format (0 = LINEAR/ULINEAR/DIRECT; 1 = IEEE-754 half-precision)\n"
+"  Bit 2   : AVSBus support (1 = device supports AVSBus)\n"
+"  Bits 1:0: Reserved (should be 0)\n"
 "\n"
 "OUTPUT (JSON) TBC\n"
 "  capability get ->\n"
@@ -38,18 +45,24 @@ static void usage_cap_long(void) {
 "      \"capability\": {\n"
 "        \"raw\": <byte>,\n"
 "        \"pec_supported\": true|false,\n"
-"        \"max_bus_speed\": { \"code\": 0|1|2|3, \"khz\": 100|400|null, \"text\": \"...\" },\n"
+"        \"max_bus_speed\": { \"code\": 0|1|2|3, \"khz\": 100|400|1000|null, \"text\": \"...\" },\n"
 "        \"smbalert_supported\": true|false,\n"
-"        \"reserved_low_bits\": <0..15>\n"
+"        \"numeric_format\": \"linear/direct\" | \"ieee754_half\",\n"
+"        \"avsbus_supported\": true|false,\n"
+"        \"reserved_low_bits\": <0..3>\n"
 "      }\n"
 "    }\n"
 "\n"
 "  capability check -> adds\n"
-"    \"checks\": { \"pec_ok\": bool, \"bus_speed_ok\": bool, \"alert_ok\": bool, \"reserved_low_zero\": bool },\n"
+"    \"checks\": {\n"
+"      \"pec_ok\": bool, \"bus_speed_ok\": bool, \"alert_ok\": bool,\n"
+"      \"numeric_format_ok\": bool, \"avsbus_ok\": bool,\n"
+"      \"reserved_low_zero\": bool, \"speed_code_valid\": bool\n"
+"    },\n"
 "    \"mismatches\": [ list of failed checks ]\n"
 "\n"
 "NOTES\n"
-"  * --strict also fails if reserved low bits (3..0) are non-zero.\n"
+"  * --strict fails if reserved low bits (1..0) are non-zero and if speed code==3 (reserved).\n"
 "  * This command intentionally does NOT include any MFR_* identity fields.\n"
 "\n"
   );
@@ -68,16 +81,14 @@ speed_text(unsigned code, int *khz_out) {
     return "400 kHz";
   case 2:
     if (khz_out)
-      *khz_out = -1;
-    return "reserved";
+      *khz_out = 1000;
+    return "1 MHz";
   case 3:
+  default:
     if (khz_out)
       *khz_out = -1;
     return "reserved";
   }
-  if (khz_out)
-    *khz_out = -1;
-  return "reserved";
 }
 
 static void
@@ -85,7 +96,9 @@ decode_cap(uint8_t cap, json_t *dst) {
   unsigned pec = (cap >> 7) & 0x1u;
   unsigned spd = (cap >> 5) & 0x3u;
   unsigned sal = (cap >> 4) & 0x1u;
-  unsigned rsv = cap & 0x0Fu;
+  unsigned num = (cap >> 3) & 0x1u;
+  unsigned avs = (cap >> 2) & 0x1u;
+  unsigned rsv = cap & 0x03u; /* only bits [1:0] are reserved */
 
   int khz = -1;
   const char *txt = speed_text(spd, &khz);
@@ -95,16 +108,13 @@ decode_cap(uint8_t cap, json_t *dst) {
 
   json_t *bs = json_object();
   json_object_set_new(bs, "code", json_integer(spd));
-
-  if (khz > 0)
-    json_object_set_new(bs, "khz", json_integer(khz));
-  else
-    json_object_set_new(bs, "khz", json_null());
-
+  json_object_set_new(bs, "khz", (khz > 0) ? json_integer(khz) : json_null());
   json_object_set_new(bs, "text", json_string(txt));
   json_object_set_new(dst, "max_bus_speed", bs);
 
   json_object_set_new(dst, "smbalert_supported", json_boolean(sal));
+  json_object_set_new(dst, "numeric_format", json_string(num ? "ieee754_half" : "linear/direct"));
+  json_object_set_new(dst, "avsbus_supported", json_boolean(avs));
   json_object_set_new(dst, "reserved_low_bits", json_integer(rsv));
 }
 
@@ -113,6 +123,23 @@ add_check(json_t *checks, const char *k, int ok, json_t *mism) {
   json_object_set_new(checks, k, json_boolean(ok));
   if (!ok)
     json_array_append_new(mism, json_string(k));
+}
+
+static int
+parse_onoff(const char *s, int *out) {
+  if (!s || !out)
+    return -1;
+
+  if (!strcmp(s, "on") || !strcmp(s, "yes") || !strcmp(s, "true")) {
+    *out = 1;
+    return 0;
+  }
+  if (!strcmp(s, "off") || !strcmp(s, "no") || !strcmp(s, "false")) {
+    *out = 0;
+    return 0;
+  }
+
+  return -1;
 }
 
 int
@@ -147,6 +174,7 @@ cmd_capability(int fd, int argc, char *const *argv, int pretty) {
   /* capability check [opts] */
   if (!strcmp(argv[0], "check")) {
     const char *need_pec = NULL, *need_alert = NULL, *min_speed = NULL;
+    const char *need_fp = NULL, *need_avsbus = NULL;
     int strict = 0;
 
     for (int i = 1; i < argc; i++) {
@@ -156,6 +184,10 @@ cmd_capability(int fd, int argc, char *const *argv, int pretty) {
         need_alert = argv[++i];
       else if (!strcmp(argv[i], "--min-speed") && i + 1 < argc)
         min_speed = argv[++i];
+      else if (!strcmp(argv[i], "--need-fp") && i + 1 < argc)
+        need_fp = argv[++i];
+      else if (!strcmp(argv[i], "--need-avsbus") && i + 1 < argc)
+        need_avsbus = argv[++i];
       else if (!strcmp(argv[i], "--strict"))
         strict = 1;
       else if (!strcmp(argv[i], "--help") || !strcmp(argv[i], "-h")) {
@@ -181,14 +213,14 @@ cmd_capability(int fd, int argc, char *const *argv, int pretty) {
 
     /* PEC check */
     if (need_pec) {
-      int want = (!strcmp(need_pec, "on") || !strcmp(need_pec, "yes") || !strcmp(need_pec, "true"));
-      int have = !!(cap & 0x80u);
-      add_check(checks, "pec_ok", (want == have), mism);
+      int want, have = !!(cap & 0x80u);
+      if (parse_onoff(need_pec, &want) == 0)
+        add_check(checks, "pec_ok", (want == have), mism);
     }
 
     /* Speed check */
     if (min_speed) {
-      int req = atoi(min_speed);  /* expect 100 or 400 */
+      int req = atoi(min_speed);  /* expect 100 or 400 or 1000 */
       unsigned code = (cap >> 5) & 0x3u;
       int khz = -1;
       (void) speed_text(code, &khz);
@@ -198,15 +230,30 @@ cmd_capability(int fd, int argc, char *const *argv, int pretty) {
 
     /* ALERT check */
     if (need_alert) {
-      int want = (!strcmp(need_alert, "on") || !strcmp(need_alert, "yes") || !strcmp(need_alert, "true"));
-      int have = !!(cap & 0x10u);
-      add_check(checks, "alert_ok", (want == have), mism);
+      int want, have = !!(cap & 0x10u);
+      if (parse_onoff(need_alert, &want) == 0)
+        add_check(checks, "alert_ok", (want == have), mism);
+    }
+
+    /* Numeric format check (bit 3) */
+    if (need_fp) {
+      int want_fp, have_fp = !!(cap & 0x08u);
+      if (parse_onoff(need_fp, &want_fp) == 0)
+        add_check(checks, "numeric_format_ok", (want_fp == have_fp), mism);
+    }
+
+    /* AVSBus check (bit 2) */
+    if (need_avsbus) {
+      int want_avs, have_avs = !!(cap & 0x04u);
+      if (parse_onoff(need_avsbus, &want_avs) == 0)
+        add_check(checks, "avsbus_ok", (want_avs == have_avs), mism);
     }
 
     /* Reserved bits strictness */
     if (strict) {
-      int rsv_ok = ((cap & 0x0Fu) == 0);
-      add_check(checks, "reserved_low_zero", rsv_ok, mism);
+      add_check(checks, "reserved_low_zero", (cap & 0x03u) == 0, mism);
+
+      add_check(checks, "speed_code_valid", ((cap >> 5) & 0x3u) != 3u, mism);
     }
 
     json_object_set_new(out, "checks", checks);
