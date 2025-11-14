@@ -14,6 +14,7 @@ sources = [
   'mfr_ramp_data.c',
   'mfr_status_data.c',
   'mfr_addr_offset.c',
+  'mfr_save_restore.c',
   'timing_cmd.c',
   'read_cmd.c',
   'status_cmd.c',
@@ -29,6 +30,7 @@ sources = [
   'capability_cmd.c',
   'fault_cmd.c',
   'temp_cmd.c',
+  'rw_cmd.c',
   'util_json.c',
 ]
 

@@ -32,8 +32,6 @@ add_read_field(json_t *o, const char *key, int fd, uint8_t reg, enum enc_t enc, 
     json_object_set_new(o, key, json_integer(w));
     break;
   }
-
-  json_object_set_new(o, key + (sizeof("") - 1), json_object_get(o, key));
 }
 
 static json_t *
