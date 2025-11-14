@@ -27,6 +27,7 @@
 #include "mfr_fwdata.h"
 #include "mfr_restart.h"
 #include "mfr_user_data.h"
+#include "rw_cmd.h"
 
 #include <jansson.h>
 #include <stdio.h>
@@ -269,6 +270,11 @@ main(int argc, char *const *argv) {
 
   if (!strcmp(cmd, "capability")) {
     rc = cmd_capability(fd, sub_argc, sub_argv, opt_pretty);
+    goto fini;
+  }
+
+  if (!strcmp(cmd, "rw")) {
+    rc = cmd_rw(fd, sub_argc, sub_argv, opt_pretty);
     goto fini;
   }
 
