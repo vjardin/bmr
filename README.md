@@ -616,7 +616,7 @@ bmr --bus /dev/i2c-1 --addr 0x40 temp read all
 
 ```bash
 bmr ... fault get [all|temp|vin|vout|tonmax|iout]
-bmr ... fault temp set \
+bmr ... fault set temp \
   [--ot-delay 16s|32s|2^n] [--ot-mode ignore|delay-retry|disable-retry|disable-until-clear] [--ot-retries 0..6|cont] \
   [--ut-delay 16s|32s|2^n] [--ut-mode ignore|delay-retry|disable-retry|disable-until-clear] [--ut-retries 0..6|cont]
 ```
@@ -638,7 +638,7 @@ Each response byte packs three fields:
   * **VIN/VOUT/TON_MAX/IOUT**: typically **10 ms/LSB** on BMR45x (see device spec).
 
 `fault get` decodes mode/retries/delay with proper units per family.
-`fault temp set` programs the **OT/UT** response bytes with friendly arguments.
+`fault set temp` programs the **OT/UT** response bytes with friendly arguments.
 
 ### Use case — 1s off, single retry on OT/UT (with temperature thresholds)
 
@@ -647,7 +647,7 @@ temperature limits to create the fault. Below sets both:
 
 **Program the OT/UT fault-response policy** (disable, wait 16s, retry once):
 ```bash
-bmr --bus /dev/i2c-1 --addr 0x40 fault temp set \
+bmr --bus /dev/i2c-1 --addr 0x40 fault set temp \
   --ot-mode disable-retry --ot-retries 1 --ot-delay 16s \
   --ut-mode disable-retry --ut-retries 1 --ut-delay 16s
 ```
@@ -655,7 +655,7 @@ bmr --bus /dev/i2c-1 --addr 0x40 fault temp set \
 **Set temperature thresholds** (example production-style values; adjust to your design):
 
 ```bash
-bmr --bus /dev/i2c-1 --addr 0x40 temp set \
+bmr --bus /dev/i2c-1 --addr 0x40 set temp \
   --ot-fault 110 --ot-warn 100 \
   --ut-warn -20  --ut-fault -40
 ```
@@ -688,10 +688,10 @@ Force a fault immediately (pick one):
 
 ```bash
 # Force OT now (set OT below current temp, e.g., if T1 ~ 25 °C):
-bmr --bus /dev/i2c-1 --addr 0x40 temp set --ot-fault 20
+bmr --bus /dev/i2c-1 --addr 0x40 set temp --ot-fault 20
 
 # or, Force UT now (set UT above current temp):
-bmr --bus /dev/i2c-1 --addr 0x40 temp set --ut-fault 30
+bmr --bus /dev/i2c-1 --addr 0x40 set temp --ut-fault 30
 
 # Persist to NVM if you want the policy to survive power cycles
 #bmr --bus /dev/i2c-1 --addr 0x40 user-data set --store
