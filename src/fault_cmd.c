@@ -115,7 +115,7 @@ static void
 usage_fault(void) {
   fprintf(stderr,
 "fault get [all|temp|vin|vout|tonmax|iout]\n"
-"fault temp set [--ot-delay 16s|32s|2^n] [--ot-mode ignore|delay-retry|disable-retry|disable-until-clear]\n"
+"fault set temp [--ot-delay 16s|32s|2^n] [--ot-mode ignore|delay-retry|disable-retry|disable-until-clear]\n"
 "               [--ot-retries 0..6|cont]\n"
 "               [--ut-delay 16s|32s|2^n] [--ut-mode ignore|delay-retry|disable-retry|disable-until-clear]\n"
 "               [--ut-retries 0..6|cont]\n"
@@ -342,14 +342,14 @@ cmd_fault(int fd, int argc, char *const *argv, int pretty) {
     return 0;
   }
 
-  if (!strcmp(sub, "temp")) {
+  if (!strcmp(sub, "set")) {
     if (argc < 2) {
       usage_fault();
       return 2;
     }
 
     const char *sub2 = argv[1];
-    if (!strcmp(sub2, "set")) {
+    if (!strcmp(sub2, "temp")) {
       const char *ot_delay = NULL, *ut_delay = NULL;
       const char *ot_mode_s = NULL, *ut_mode_s = NULL;
       const char *ot_retries_s = NULL, *ut_retries_s = NULL;
