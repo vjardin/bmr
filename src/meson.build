@@ -29,6 +29,7 @@ sources = [
   'capability_cmd.c',
   'fault_cmd.c',
   'temp_cmd.c',
+  'rw_cmd.c',
   'util_json.c',
 ]
 
