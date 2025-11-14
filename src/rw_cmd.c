@@ -20,7 +20,7 @@ decode_rww(uint16_t v, json_t *o) {
 }
 
 static void
-usage_operation(void) {
+usage_rw(void) {
   fprintf(stderr,
 "rw get [byte|word] [--cmd 0xHH]\n"
 "rw set [byte|word] [--cmd 0xHH] [--value 0xAAAA]\n"
@@ -68,7 +68,7 @@ cmd_rw(int fd, int argc, char *const *argv, int pretty) {
 
   if (argc < 4) {
     fprintf(stderr, "not enough agrs %d\n", argc);
-    usage_operation();
+    usage_rw();
     return 2;
   }
 
@@ -80,14 +80,14 @@ cmd_rw(int fd, int argc, char *const *argv, int pretty) {
       value = argv[++i];
     else {
       fprintf(stderr, "unknown args %s\n", a);
-      usage_operation();
+      usage_rw();
       return 2;
     }
   }
 
   if (cmd == NULL) {
     fprintf(stderr, "--cmd missing\n");
-    usage_operation();
+    usage_rw();
     return 2;
   }
 
@@ -121,7 +121,7 @@ cmd_rw(int fd, int argc, char *const *argv, int pretty) {
       return 0;
     } else {
       fprintf(stderr, "wrong second args %s\n", argv[1]);
-      usage_operation();
+      usage_rw();
       return 2;
     }
   }
@@ -130,7 +130,7 @@ cmd_rw(int fd, int argc, char *const *argv, int pretty) {
 
     if (value == NULL) {
       fprintf(stderr, "--value missing\n");
-      usage_operation();
+      usage_rw();
       return 2;
     }
 
@@ -161,14 +161,14 @@ cmd_rw(int fd, int argc, char *const *argv, int pretty) {
       return 0;
     } else {
       fprintf(stderr, "wrong second args %s\n", argv[1]);
-      usage_operation();
+      usage_rw();
       return 2;
     }
   }
 
   fprintf(stderr, "wrong first args %s\n", argv[0]);
 
-  usage_operation();
+  usage_rw();
 
   return 2;
 }
