@@ -712,6 +712,22 @@ bmr --bus /dev/i2c-1 --addr 0x40 temp set \
 bmr --bus /dev/i2c-1 --addr 0x40 user-data set --store
 ```
 
+## rw — direct access to a byte / word register
+
+```bash
+bmr ... rw get [byte|word] [--cmd 0xHH]
+bmr ... rw set [byte|word] [--cmd 0xHH] [--value 0xAAAA]
+```
+
+### What it does
+
+Read / write on any command on byte or word format
+
+### Use case
+
+Cover cases to access to a register not cover (or incorrectly done) by a specific command.
+Allow to configure any BMR
+
 ## Notes & best practices
 
 * **Linear formats**: The tool reads `VOUT_MODE` to scale VOUT and uses
