@@ -88,6 +88,8 @@ usage(const char *p) {
 "  temp get  [all|ot|ut|warn]\n"
 "  temp set  [--ot-fault <C>] [--ut-fault <C>] [--ot-warn <C>] [--ut-warn <C>]\n"
 "  temp read [all|t1|t2|t3]\n"
+"  rw get [byte|word] [--cmd 0xHH]\n"
+"  rw set [byte|word] [--cmd 0xHH] [--value 0xAAAA]\n"
 "\n"
 "Hints:\n"
 "  * Use '<command> help' where available (e.g., 'hrr help', 'capability help', 'fault help') for detailed docs.\n"

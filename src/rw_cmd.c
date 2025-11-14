@@ -22,8 +22,8 @@ decode_rww(uint16_t v, json_t *o) {
 static void
 usage_operation(void) {
   fprintf(stderr,
-"rw get [byte|word] [--cmd 0xHH]\n"
-"rw set [byte|word] [--cmd 0xHH] [--value 0xAAAA]\n"
+          "rw get [byte|word] [--cmd 0xHH]\n"
+          "rw set [byte|word] [--cmd 0xHH] [--value 0xAAAA]\n"
   );
 }
 
