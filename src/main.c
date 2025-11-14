@@ -9,6 +9,7 @@
 #include "mfr_ramp_data.h"
 #include "mfr_addr_offset.h"
 #include "mfr_status_data.h"
+#include "mfr_save_restore.h"
 #include "timing_cmd.h"
 #include "read_cmd.h"
 #include "onoff_cmd.h"
@@ -47,13 +48,15 @@ usage(const char *p) {
 "\n"
 "Commands:\n"
 "  read [vin|vout|iout|temp1|temp2|duty|freq|all]\n"
+"  save\n"
+"  restore [default]\n"
 "  status\n"
 "  snapshot [--cycle 0..19] [--decode]\n"
 "  mfr-multi-pin get|set [--mode MODE] [--pg pushpull|highz] [--pg-enable 0|1] [--sec-rc-pull 0|1]\n"
 "  id\n"
 "  fwdata\n"
 "  restart\n"
-"  user-data get|set [--hex XX..|--ascii STR] [--store|--restore]\n"
+"  user-data get|set [--hex XX..|--ascii STR]\n"
 "  timing get|set [--profile safe|sequenced|fast|prebias]\n"
 "  fault get [all|temp|vin|vout|tonmax|iout]\n"
 "  fault temp set [--ot-delay 16s|32s|2^n] [--ot-mode disable-retry] [--ot-retries cont]\n"
@@ -275,6 +278,16 @@ main(int argc, char *const *argv) {
 
   if (!strcmp(cmd, "rw")) {
     rc = cmd_rw(fd, sub_argc, sub_argv, opt_pretty);
+    goto fini;
+  }
+
+  if (!strcmp(cmd, "save")) {
+    rc = cmd_save(fd);
+    goto fini;
+  }
+
+  if (!strcmp(cmd, "restore")) {
+    rc = cmd_restore(fd, sub_argc, sub_argv);
     goto fini;
   }
 
