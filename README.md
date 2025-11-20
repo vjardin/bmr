@@ -28,6 +28,36 @@ bmr --bus /dev/i2c-1 --addr 0x40 <command> [subcommand] [--pretty-off|P]
 * `--addr` 7-bit device address (default: `0x40`).
 * `--pretty-off|P` disable pretty output
 
+## save — save current configuration
+
+```bash
+bmr ... save
+```
+
+### What it does
+
+Save all modifications to be permanent for next power cycle or call to restart
+command.
+
+## restore — restore configuration
+
+```bash
+bmr ... restore [default]
+```
+
+### What it does
+
+Reload and apply factory default configuration if default is set, otherwise
+reload the last saved configuration i.e. similar to call to the restart command.
+
+### Use case
+
+Drop the current change:
+
+```bash
+bmr --bus /dev/i2c-1 --addr 0x40 restore
+```
+
 ## read — Telemetry & sensor data
 
 ```bash
@@ -202,22 +232,20 @@ margins/timing profiles.
 
 ```bash
 bmr ... user-data get
-bmr ... user-data set --ascii "Hello" [--store]
+bmr ... user-data set --ascii "Hello"
 ```
 
 ### What it does
 
 Accesses vendor `USER_DATA_00` (0xB0) area for storing small notes or process
-metadata (e.g., calibration token). With `--store`, the tool persists changes
-via `STORE_USER_ALL` or device-specific store, observing NVM latency. See App
-Note 302 for STORE/RESTORE semantics and timing.
+metadata (e.g., calibration token).
 
 ### Use case
 
 Stamp a unit with a calibration tag, manufacturing information:
 
 ```bash
-bmr ... user-data set --ascii "Cal=OK@2025-11-09" --store
+bmr ... user-data set --ascii "Cal=OK@2025-11-09"
 ```
 
 Wait ~5–10 ms before re-reading to allow NVM write to complete.
@@ -605,7 +633,7 @@ Set typical limits and verify live sensors:
 bmr --bus /dev/i2c-1 --addr 0x40 temp set --ot-fault 110 --ot-warn 100 --ut-warn -20 --ut-fault -40
 
 # Persist if desired (device NVM):
-bmr --bus /dev/i2c-1 --addr 0x40 user-data set --store
+bmr --bus /dev/i2c-1 --addr 0x40 save
 
 # Read back limits and live temps
 bmr --bus /dev/i2c-1 --addr 0x40 temp get all
@@ -616,7 +644,7 @@ bmr --bus /dev/i2c-1 --addr 0x40 temp read all
 
 ```bash
 bmr ... fault get [all|temp|vin|vout|tonmax|iout]
-bmr ... fault temp set \
+bmr ... fault set temp \
   [--ot-delay 16s|32s|2^n] [--ot-mode ignore|delay-retry|disable-retry|disable-until-clear] [--ot-retries 0..6|cont] \
   [--ut-delay 16s|32s|2^n] [--ut-mode ignore|delay-retry|disable-retry|disable-until-clear] [--ut-retries 0..6|cont]
 ```
@@ -638,7 +666,7 @@ Each response byte packs three fields:
   * **VIN/VOUT/TON_MAX/IOUT**: typically **10 ms/LSB** on BMR45x (see device spec).
 
 `fault get` decodes mode/retries/delay with proper units per family.
-`fault temp set` programs the **OT/UT** response bytes with friendly arguments.
+`fault set temp` programs the **OT/UT** response bytes with friendly arguments.
 
 ### Use case — 1s off, single retry on OT/UT (with temperature thresholds)
 
@@ -647,7 +675,7 @@ temperature limits to create the fault. Below sets both:
 
 **Program the OT/UT fault-response policy** (disable, wait 16s, retry once):
 ```bash
-bmr --bus /dev/i2c-1 --addr 0x40 fault temp set \
+bmr --bus /dev/i2c-1 --addr 0x40 fault set temp \
   --ot-mode disable-retry --ot-retries 1 --ot-delay 16s \
   --ut-mode disable-retry --ut-retries 1 --ut-delay 16s
 ```
@@ -655,7 +683,7 @@ bmr --bus /dev/i2c-1 --addr 0x40 fault temp set \
 **Set temperature thresholds** (example production-style values; adjust to your design):
 
 ```bash
-bmr --bus /dev/i2c-1 --addr 0x40 temp set \
+bmr --bus /dev/i2c-1 --addr 0x40 set temp \
   --ot-fault 110 --ot-warn 100 \
   --ut-warn -20  --ut-fault -40
 ```
@@ -663,7 +691,7 @@ bmr --bus /dev/i2c-1 --addr 0x40 temp set \
 **Persist to NVM** (optional, if you want the policy/limits after power cycle):
 
 ```bash
-bmr --bus /dev/i2c-1 --addr 0x40 user-data set --store
+bmr --bus /dev/i2c-1 --addr 0x40 save
 ```
 
 **Verify**:
@@ -688,13 +716,13 @@ Force a fault immediately (pick one):
 
 ```bash
 # Force OT now (set OT below current temp, e.g., if T1 ~ 25 °C):
-bmr --bus /dev/i2c-1 --addr 0x40 temp set --ot-fault 20
+bmr --bus /dev/i2c-1 --addr 0x40 set temp --ot-fault 20
 
 # or, Force UT now (set UT above current temp):
-bmr --bus /dev/i2c-1 --addr 0x40 temp set --ut-fault 30
+bmr --bus /dev/i2c-1 --addr 0x40 set temp --ut-fault 30
 
 # Persist to NVM if you want the policy to survive power cycles
-#bmr --bus /dev/i2c-1 --addr 0x40 user-data set --store
+#bmr --bus /dev/i2c-1 --addr 0x40 save
 ```
 
 The rail shall shutdown, wait 16s, retry once, then:
@@ -709,8 +737,24 @@ bmr --bus /dev/i2c-1 --addr 0x40 temp set \
   --ot-fault 110 --ot-warn 100 --ut-warn -20 --ut-fault -40
 
 # Persist to NVM if you want the policy to survive power cycles
-bmr --bus /dev/i2c-1 --addr 0x40 user-data set --store
+bmr --bus /dev/i2c-1 --addr 0x40 save
 ```
+
+## rw — direct access to a byte / word register
+
+```bash
+bmr ... rw get [byte|word] [--cmd 0xHH]
+bmr ... rw set [byte|word] [--cmd 0xHH] [--value 0xAAAA]
+```
+
+### What it does
+
+Read / write on any command on byte or word format
+
+### Use case
+
+Cover cases to access to a register not cover (or incorrectly done) by a specific command.
+Allow to configure any BMR
 
 ## Notes & best practices
 

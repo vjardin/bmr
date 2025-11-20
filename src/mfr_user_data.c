@@ -11,14 +11,15 @@
 
 int
 cmd_user_data(int fd, int argc, char *const *argv, int pretty) {
+  uint8_t b[64];
+
   if (argc < 1) {
     fprintf(stderr, "user-data get|set ...\n");
     return 2;
   }
 
   if (!strcmp(argv[0], "get")) {
-    uint8_t buf[64];
-    int n = pmbus_rd_block(fd, MFR_USER_DATA_00, buf, sizeof buf);
+    int n = pmbus_rd_block(fd, MFR_USER_DATA_00, b, sizeof b);
     if (n < 0) {
       perror("USER_DATA_00");
       return 1;
@@ -26,8 +27,8 @@ cmd_user_data(int fd, int argc, char *const *argv, int pretty) {
 
     json_t *o = json_object();
     json_object_set_new(o, "len", json_integer(n));
-    json_object_set_new(o, "ascii", json_stringn((char *) buf, n));
-    json_add_hex_ascii(o, "hex", buf, (size_t)n);
+    json_object_set_new(o, "ascii", json_stringn((char *) b, n));
+    json_add_hex_ascii(o, "hex", b, (size_t)n);
 
     json_print_or_pretty(o, pretty);
 
@@ -36,20 +37,14 @@ cmd_user_data(int fd, int argc, char *const *argv, int pretty) {
 
   if (!strcmp(argv[0], "set")) {
     const char *hex = NULL, *ascii = NULL;
-    bool store = false, restore = false;
 
     for (int i = 1; i < argc; i++) {
       if (!strcmp(argv[i], "--hex") && i + 1 < argc)
         hex = argv[++i];
       else if (!strcmp(argv[i], "--ascii") && i + 1 < argc)
         ascii = argv[++i];
-      else if (!strcmp(argv[i], "--store"))
-        store = true;
-      else if (!strcmp(argv[i], "--restore"))
-        restore = true;
     }
 
-    uint8_t b[64];
     int n = 0;
 
     if (hex) {
@@ -84,13 +79,6 @@ cmd_user_data(int fd, int argc, char *const *argv, int pretty) {
 
       return 1;
     }
-
-    if (store)
-      pmbus_send_byte(fd, PMBUS_STORE_USER_ALL);
-    if (restore)
-      pmbus_send_byte(fd, PMBUS_RESTORE_USER_ALL);
-
-    puts("OK");
 
     return 0;
   }

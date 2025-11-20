@@ -41,9 +41,12 @@ json_print_or_pretty(json_t *o, int pretty) {
 
   char *s = json_dumps(o, pretty ? JSON_INDENT(2) | JSON_SORT_KEYS : JSON_SORT_KEYS);
 
-  puts(s);
-  free(s);
-
+  if (s) {
+    puts(s);
+    free(s);
+  } else {
+    puts("Invalid json object");
+  }
   json_decref(o);
 }
 
