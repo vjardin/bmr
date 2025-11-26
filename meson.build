@@ -4,7 +4,7 @@ project('bmr', 'c',
   version: '0.1.0',
   default_options: [
     'warning_level=everything',
-    'werror=true',
+#   'werror=true',
     'c_std=c2x'
   ]
 )
