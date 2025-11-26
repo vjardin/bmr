@@ -111,7 +111,7 @@ pmbus_lin16u_to_double(uint16_t raw, int exp5) {
 }
 
 uint16_t
-le16(const uint8_t *p) {
+BMR_PURE le16(const uint8_t *p) {
   return (uint16_t)(
         (uint16_t)p[0]
       | ((uint16_t)p[1] << 8)
@@ -120,7 +120,7 @@ le16(const uint8_t *p) {
 }
 
 uint32_t
-le32(const uint8_t *p) {
+BMR_PURE le32(const uint8_t *p) {
   return (uint32_t)  p[0]
        | ((uint32_t) p[1] << 8)
        | ((uint32_t) p[2] << 16)

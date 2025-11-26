@@ -7,6 +7,12 @@
 
 #define D(xf) (double)((xf))
 
+#if defined(__GNUC__) || defined(__clang__)
+#  define BMR_PURE __attribute__((pure))
+#else
+#  define BMR_PURE
+#endif
+
 /* TODO: align with PMBus-Specification-Rev-1-3-1-Part-II-20150313.pdf */
 /*
  * PMBus standard (generic):
