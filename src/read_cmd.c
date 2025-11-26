@@ -1,7 +1,9 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 
 #include "pmbus_io.h"
+#include "read_cmd.h"
 #include "util_json.h"
+
 #include <jansson.h>
 #include <string.h>
 #include <stdio.h>
@@ -30,6 +32,9 @@ add_read_field(json_t *o, const char *key, int fd, uint8_t reg, enum enc_t enc, 
     break;
   case ENC_RAW_INT:
     json_object_set_new(o, key, json_integer(w));
+    break;
+  default:
+    __builtin_unreachable();
     break;
   }
 }

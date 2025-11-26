@@ -1,7 +1,9 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 
 #include "pmbus_io.h"
+#include "status_cmd.h"
 #include "decoders.h"
+
 #include "util_json.h"
 #include <jansson.h>
 

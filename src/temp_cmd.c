@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 
 #include "pmbus_io.h"
+#include "temp_cmd.h"
 #include "util_json.h"
 
 #include <jansson.h>
@@ -11,6 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 /*
  * Linear11: 5-bit signed exponent (E), 11-bit signed mantissa (Y), value = Y * 2^E
@@ -19,15 +21,20 @@
 
 static inline long
 lround_compat(double d) {
-  return (long) ((d >= 0.0) ? (d + 0.5) : (d - 0.5));
+  return (long) ((d >= D(0.0f)) ? (d + D(0.5f)) : (d - D(0.5f)));
 }
 
 static inline int32_t
 sign_extend(int32_t v, unsigned bits) {
-  int32_t m = 1u << (bits - 1);
+  assert(bits > 0 && bits < 32);
 
-  v = v & ((1u << bits) - 1);
-  return (v ^ m) - m;
+  uint32_t uv = (uint32_t)v;
+  uint32_t m = (uint32_t)1u << (bits - 1);
+
+  uv &= (m << 1) - 1u;
+  uv = (uv ^ m) - m;
+
+  return (int32_t)uv;
 }
 
 static double
@@ -47,8 +54,17 @@ lin11_to_double(uint16_t raw) {
 
 static uint16_t
 double_to_lin11(double v) {
-  if (v == 0.0)
+
+#if 0
+  if (v == D(0.0f))
     return 0;
+#else
+  /* epsilon: smallest assume it is same than 0 */
+  const double lin11_eps = D(1.0f / (float)(1u << 16));
+
+  if ((v > -lin11_eps) && (v < lin11_eps))
+    return 0;
+#endif
 
   /* Choose E in [-16..15] so Y fits in [-1024..1023] with best resolution. */
   int bestE = 0;
@@ -121,9 +137,9 @@ parse_temp_celsius(const char *s, double *outC) {
     if (u == 'C') {
       C = v;
     } else if (u == 'K') {
-      C = v - 273.15;
+      C = v - D(273.15f);
     } else if (u == 'F') {
-      C = (v - 32.0) * (5.0 / 9.0);
+      C = (v - D(32.0f)) * (D(5.0f) / D(9.0f));
     } else {
       /* unknown */
       return -1;
@@ -231,7 +247,8 @@ usage_temp_long(void) {
 
 static int
 write_one_limit(int fd, const char *label, uint8_t cmd, const char *val_s, json_t *w, json_t *rb) {
-  double C = 0.0;
+  double C = D(0.0f);
+
   if (parse_temp_celsius(val_s, &C) < 0) {
     fprintf(stderr, "bad value for %s\n", label);
     return 2;

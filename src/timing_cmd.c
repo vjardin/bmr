@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 
 #include "pmbus_io.h"
+#include "timing_cmd.h"
 #include "util_json.h"
 
 #include <jansson.h>
@@ -99,6 +100,7 @@ struct timing_profile {
   uint16_t ton_rise;
   uint16_t ton_max_fault_limit;
   uint8_t ton_max_fault_response; /* packed byte */
+  uint8_t __pad1;
   uint16_t toff_delay;
   uint16_t toff_fall;
   uint16_t toff_max_warn_limit;

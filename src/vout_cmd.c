@@ -1,7 +1,9 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 
 #include "pmbus_io.h"
+#include "vout_cmd.h"
 #include "util_json.h"
+
 #include "util_lin.h"
 #include <jansson.h>
 #include <string.h>
@@ -129,7 +131,7 @@ cmd_vout(int fd, int argc, char *const *argv, int pretty) {
     if (read_exp(fd, &exp5) < 0)
       return 1;
 
-    double v_nom = 0.0, pct = 0.0;
+    double v_nom = 0.0f, pct = 0.0f;
     if (s_all_nom) {
       if (parse_double(s_all_nom, &v_nom) != 0) {
         fprintf(stderr, "invalid --set-all NOM\n");
@@ -150,14 +152,14 @@ cmd_vout(int fd, int argc, char *const *argv, int pretty) {
 
       if (!s_high) {
         static char bufH[64];
-        double vH = v_nom * (1.0 + pct / 100.0);
+        double vH = v_nom * (D(1.0f) + pct / D(100.0f));
         snprintf(bufH, sizeof(bufH), "%.9g", vH);
         s_high = bufH;
       }
 
       if (!s_low) {
         static char bufL[64];
-        double vL = v_nom * (1.0 - pct / 100.0);
+        double vL = v_nom * (D(1.0f) - pct / D(100.0f));
         snprintf(bufL, sizeof(bufL), "%.9g", vL);
         s_low = bufL;
       }

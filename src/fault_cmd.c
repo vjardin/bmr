@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 
 #include "pmbus_io.h"
+#include "fault_cmd.h"
 #include "util_json.h"
 
 #include <jansson.h>
@@ -49,6 +50,8 @@ resp_mode_name(uint8_t b) {
       return "disable-and-retry";
     case MODE_DISABLE_UNTIL_CLEAR:
       return "disable-until-clear";
+    default:
+      return "invalid resp mode";
     }
 
   return "unknown";

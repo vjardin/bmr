@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 #include "pmbus_io.h"
+#include "write_protect_cmd.h"
 #include "util_json.h"
+
 #include <jansson.h>
 #include <string.h>
 #include <stdio.h>

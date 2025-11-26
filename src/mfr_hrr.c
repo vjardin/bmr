@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 #include "pmbus_io.h"
+#include "mfr_hrr.h"
 #include "util_json.h"
 
 #include <jansson.h>
@@ -14,6 +15,10 @@
 #define BIT_DLS     (1u<<5)     /* 0: linear droop, 1: non-linear droop */
 #define BIT_ARTDLC  (1u<<3)     /* Adaptive Ramp-up Time / Dynamic Loop Compensation enable */
 #define BIT_DBV     (1u<<2)     /* Dynamic Bus Voltage enable */
+
+#define FLAG_SET8(v, flag)  ((v) |= (uint8_t)(flag))
+#define FLAG_CLEAR8(v, flag) ((v) &= (uint8_t)~(uint8_t)(flag))
+#define FLAG_ISSET8(val, flag) (!!(((uint8_t)(val)) & (uint8_t)(flag)))
 
 static void
 usage_hrr_short(void) {
@@ -110,11 +115,11 @@ cmd_hrr(int fd, int argc, char *const *argv, int pretty) {
 
     json_t *o = json_object();
     json_object_set_new(o, "MFR_SPECIAL_OPTIONS_raw", json_integer((unsigned) (uint8_t) v));
-    json_object_set_new(o, "require_pec", json_boolean(!!((uint8_t) v & BIT_PEC)));
-    json_object_set_new(o, "hrr_enabled", json_boolean(!!((uint8_t) v & BIT_HRR)));
-    json_object_set_new(o, "dls_mode", json_string(((uint8_t) v & BIT_DLS) ? "nonlinear" : "linear"));
-    json_object_set_new(o, "artdlc_enabled", json_boolean(!!((uint8_t) v & BIT_ARTDLC)));
-    json_object_set_new(o, "dbv_enabled", json_boolean(!!((uint8_t) v & BIT_DBV)));
+    json_object_set_new(o, "require_pec", json_boolean(FLAG_ISSET8(v, BIT_PEC)));
+    json_object_set_new(o, "hrr_enabled", json_boolean(FLAG_ISSET8(v, BIT_HRR)));
+    json_object_set_new(o, "dls_mode", json_string(FLAG_ISSET8(v, BIT_DLS) ? "nonlinear" : "linear"));
+    json_object_set_new(o, "artdlc_enabled", json_boolean(FLAG_ISSET8(v, BIT_ARTDLC)));
+    json_object_set_new(o, "dbv_enabled", json_boolean(FLAG_ISSET8(v, BIT_DBV)));
 
     json_print_or_pretty(o, pretty);
 
@@ -164,22 +169,22 @@ cmd_hrr(int fd, int argc, char *const *argv, int pretty) {
       int v;
       if ((v = parse_onoff(pec_s)) >= 0) {
         if (v)
-          nv |= BIT_PEC;
+          FLAG_SET8(nv, BIT_PEC);
         else
-          nv &= ~BIT_PEC;
+          FLAG_CLEAR8(nv, BIT_PEC);
       }
       if ((v = parse_onoff(hrr_s)) >= 0) {
         if (v)
-          nv |= BIT_HRR;
+          FLAG_SET8(nv, BIT_HRR);
         else
-          nv &= ~BIT_HRR;
+          FLAG_CLEAR8(nv, BIT_HRR);
       }
 
       if (dls_s) {
         if (!strcmp(dls_s, "linear"))
-          nv &= ~BIT_DLS;
+          FLAG_CLEAR8(nv, BIT_DLS);
         else if (!strcmp(dls_s, "nonlinear"))
-          nv |= BIT_DLS;
+          FLAG_SET8(nv, BIT_DLS);
         else {
           fprintf(stderr, "--dls linear|nonlinear\n");
           return 2;
@@ -188,15 +193,15 @@ cmd_hrr(int fd, int argc, char *const *argv, int pretty) {
 
       if ((v = parse_onoff(art_s)) >= 0) {
         if (v)
-          nv |= BIT_ARTDLC;
+          FLAG_SET8(nv, BIT_ARTDLC);
         else
-          nv &= ~BIT_ARTDLC;
+          FLAG_CLEAR8(nv, BIT_ARTDLC);
       }
       if ((v = parse_onoff(dbv_s)) >= 0) {
         if (v)
-          nv |= BIT_DBV;
+          FLAG_SET8(nv, BIT_DBV);
         else
-          nv &= ~BIT_DBV;
+          FLAG_CLEAR8(nv, BIT_DBV);
       }
     }
 
@@ -216,11 +221,11 @@ cmd_hrr(int fd, int argc, char *const *argv, int pretty) {
     json_t *o = json_object();
     json_object_set_new(o, "changed", json_boolean(nv != (uint8_t) cur));
     json_object_set_new(o, "MFR_SPECIAL_OPTIONS_raw", json_integer((unsigned) (uint8_t) rb));
-    json_object_set_new(o, "require_pec", json_boolean(!!((uint8_t) rb & BIT_PEC)));
-    json_object_set_new(o, "hrr_enabled", json_boolean(!!((uint8_t) rb & BIT_HRR)));
-    json_object_set_new(o, "dls_mode", json_string(((uint8_t) rb & BIT_DLS) ? "nonlinear" : "linear"));
-    json_object_set_new(o, "artdlc_enabled", json_boolean(!!((uint8_t) rb & BIT_ARTDLC)));
-    json_object_set_new(o, "dbv_enabled", json_boolean(!!((uint8_t) rb & BIT_DBV)));
+    json_object_set_new(o, "require_pec", json_boolean(FLAG_ISSET8(rb,BIT_PEC)));
+    json_object_set_new(o, "hrr_enabled", json_boolean(FLAG_ISSET8(rb, BIT_HRR)));
+    json_object_set_new(o, "dls_mode", json_string(FLAG_ISSET8(rb, BIT_DLS) ? "nonlinear" : "linear"));
+    json_object_set_new(o, "artdlc_enabled", json_boolean(FLAG_ISSET8(rb, BIT_ARTDLC)));
+    json_object_set_new(o, "dbv_enabled", json_boolean(FLAG_ISSET8(rb, BIT_DBV)));
 
     json_print_or_pretty(o, pretty);
 

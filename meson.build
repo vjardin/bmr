@@ -3,7 +3,8 @@
 project('bmr', 'c',
   version: '0.1.0',
   default_options: [
-    'warning_level=3',
+    'warning_level=everything',
+    'werror=true',
     'c_std=c2x'
   ]
 )

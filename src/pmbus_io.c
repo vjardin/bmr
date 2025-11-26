@@ -63,7 +63,7 @@ pmbus_wr_word(int fd, uint8_t cmd, uint16_t val) {
 }
 
 int
-pmbus_wr_block(int fd, uint8_t cmd, const uint8_t *buf, int len) {
+pmbus_wr_block(int fd, uint8_t cmd, const uint8_t *buf, uint8_t len) {
   return i2c_smbus_write_block_data(fd, cmd, len, buf);
 }
 
@@ -112,9 +112,11 @@ pmbus_lin16u_to_double(uint16_t raw, int exp5) {
 
 uint16_t
 le16(const uint8_t *p) {
-  return (uint16_t) p[0]
-      | ((uint16_t) p[1] << 8)
-      ;
+  return (uint16_t)(
+        (uint16_t)p[0]
+      | ((uint16_t)p[1] << 8)
+      );
+
 }
 
 uint32_t
