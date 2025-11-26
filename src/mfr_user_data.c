@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 
 #include "pmbus_io.h"
+#include "mfr_user_data.h"
 #include "util_json.h"
 
 #include <jansson.h>
@@ -27,7 +28,7 @@ cmd_user_data(int fd, int argc, char *const *argv, int pretty) {
 
     json_t *o = json_object();
     json_object_set_new(o, "len", json_integer(n));
-    json_object_set_new(o, "ascii", json_stringn((char *) b, n));
+    json_object_set_new(o, "ascii", json_stringn((char *) b, (size_t)n));
     json_add_hex_ascii(o, "hex", b, (size_t)n);
 
     json_print_or_pretty(o, pretty);
@@ -45,7 +46,7 @@ cmd_user_data(int fd, int argc, char *const *argv, int pretty) {
         ascii = argv[++i];
     }
 
-    int n = 0;
+    size_t n = 0;
 
     if (hex) {
       size_t L = strlen(hex);
@@ -62,9 +63,9 @@ cmd_user_data(int fd, int argc, char *const *argv, int pretty) {
         sscanf(hex + 2 * i, "%2x", &v);
         b[i] = (uint8_t) v;
       }
-      n = (int) (L / 2);
+      n = L / 2;
     } else if (ascii) {
-      n = (int) strlen(ascii);
+      n = strlen(ascii);
       if (n > 32)
         n = 32;
       memcpy(b, ascii, n);
@@ -74,7 +75,11 @@ cmd_user_data(int fd, int argc, char *const *argv, int pretty) {
       return 2;
     }
 
-    if (pmbus_wr_block(fd, MFR_USER_DATA_00, b, n) < 0) {
+    if (n > 255) {
+      fprintf(stderr, "USER_DATA_00 write: len %zu > 255", n);
+      return 1;
+    }
+    if (pmbus_wr_block(fd, MFR_USER_DATA_00, b, (uint8_t)n) < 0) {
       perror("USER_DATA_00 write");
 
       return 1;

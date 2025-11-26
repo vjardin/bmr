@@ -37,7 +37,7 @@
 #include <getopt.h>
 
 static const char *opt_bus = "/dev/i2c-1";
-static int opt_addr = 0x40;
+static uint8_t opt_addr = 0x40;
 static int opt_pretty = 1;
 
 static void
@@ -121,7 +121,7 @@ main(int argc, char *const *argv) {
         opt_bus = optarg;
         break;
       case 'a':
-        opt_addr = (int)strtol(optarg, NULL, 0);
+        opt_addr = (uint8_t)strtol(optarg, NULL, 0);
         break;
       case 'P':
         opt_pretty = 0;

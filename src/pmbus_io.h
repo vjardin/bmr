@@ -5,6 +5,15 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define D(xf) (double)((xf))
+
+#if defined(__GNUC__) || defined(__clang__)
+#  define BMR_PURE __attribute__((pure))
+#else
+#  define BMR_PURE
+#endif
+
+/* TODO: align with PMBus-Specification-Rev-1-3-1-Part-II-20150313.pdf */
 /*
  * PMBus standard (generic):
  *   - Control:            0x01, 0x02, 0x03, 0x10, 0x11, 0x12, 0x15, 0x16, 0x19
@@ -177,7 +186,7 @@ int pmbus_rd_word(int fd, uint8_t cmd);
 int pmbus_rd_block(int fd, uint8_t cmd, uint8_t * buf, int max);
 int pmbus_wr_byte(int fd, uint8_t cmd, uint8_t val);
 int pmbus_wr_word(int fd, uint8_t cmd, uint16_t val);
-int pmbus_wr_block(int fd, uint8_t cmd, const uint8_t * buf, int len);
+int pmbus_wr_block(int fd, uint8_t cmd, const uint8_t * buf, uint8_t len);
 int pmbus_send_byte(int fd, uint8_t cmd);
 
 /* returns 0 if linear mode */

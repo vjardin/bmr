@@ -1,7 +1,9 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 
 #include "pmbus_io.h"
+#include "mfr_fwdata.h"
 #include "util_json.h"
+
 #include <jansson.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,8 +24,8 @@ cmd_fwdata(int fd, int pretty) {
 
   /* Extract printable runs >= 3 */
   json_t *runs = json_array();
-  int run = 0, start = 0;
-  for (int i = 0; i < n; i++) {
+  size_t run = 0, start = 0;
+  for (size_t i = 0; i < (size_t)n; i++) {
     if (b[i] >= 32 && b[i] <= 126) {
       if (run == 0)
         start = i;
